@@ -32,8 +32,7 @@ metadata {
         attribute "FrontContact", "STRING"
         attribute "BedroomContact", "STRING" 
         attribute "EntryClosetContact", "STRING" 
-        attribute "DenLContact", "STRING" 
-        attribute "DenRContact", "STRING" 
+        attribute "DenContact", "STRING"
         attribute "HallClosetContact", "STRING"
         attribute "BedroomClosetContact", "STRING"
         attribute "LaundryContact", "STRING"
@@ -226,14 +225,11 @@ metadata {
 		  state "closed", label:'', icon:"https://raw.githubusercontent.com/jghoffer/STicons/master/yellow-closed.png"
           state "open", label:'', icon:"https://raw.githubusercontent.com/jghoffer/STicons/master/yellow-open-red.png"
 		}
-        standardTile("DenContactL", "device.DenLContact", inactiveLabel: false, width: 1, height: 1) {
-		  state "closed", label:'${currentValue}', icon:"https://raw.githubusercontent.com/jghoffer/STicons/master/yellow-closed-red.png"
+        standardTile("DenContact", "device.DenContact", inactiveLabel: false, width: 1, height: 1) {
+		  state "closed", label:'', icon:"https://raw.githubusercontent.com/jghoffer/STicons/master/yellow-closed-red.png"
           state "open", label:'', icon:"https://raw.githubusercontent.com/jghoffer/STicons/master/yellow-open.png"
 		}    
-        standardTile("DenContactR", "device.DenRContact", inactiveLabel: false, width: 1, height: 1) {
-		  state "closed", label:'${currentValue}', icon:"https://raw.githubusercontent.com/jghoffer/STicons/master/yellow-closed-red.png"
-          state "open", label:'', icon:"https://raw.githubusercontent.com/jghoffer/STicons/master/yellow-open.png"
-		}          
+                
         standardTile("BedCloset", "device.BedroomClosetContact", inactiveLabel: false, width: 1, height: 1) {
 		  state "closed", label:'', icon:"https://raw.githubusercontent.com/jghoffer/STicons/master/brown-closed.png"
           state "open", label:'', icon:"https://raw.githubusercontent.com/jghoffer/STicons/master/brown-open-red.png"
@@ -398,8 +394,8 @@ metadata {
         
         main "status"
 		details([
-  "DenMotion2",		"DenMotion",	 	"DenContactR",	"FrontDoor",		"Temp",				"dummy",
-  "DenMotion2", 	"DenMotion",	 	"DenContactL",	"EntryMotion", 		"GuestBathContact",	"GuestBathMotion",
+  "DenMotion2",		"DenMotion",	 	"Temp",	"FrontDoor",		"dummy",				"dummy",
+  "DenMotion2", 	"DenMotion",	 	"DenContact",	"EntryMotion", 		"GuestBathContact",	"GuestBathMotion",
   "DenTemp",		"DenCloset",		"HVACContact",	"HallwayMotion",	"GuestBathTemp",	"GuestShower",
   "BedShower",		"BedBathTemp", 		"Laundry",		"HallwayMotion",	"EntryCloset",		"KitchenTemp",
   "BedBathMotion",	"BedBathContact",	"BedContact",	"HallwayMotion",	"KitchenFront",		"KitchenBack",

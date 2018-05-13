@@ -455,7 +455,12 @@ def setStatus(value) {
 }
 
 def setLevel(value) {
-	value = value as Integer
+	state.newLevel = value
+    runIn(1, setLevelWorker)
+}
+
+def setLevelWorker() {
+	def value = state.newLevel as Integer
 	log.debug "value is $value"
 	if ((value < 45)) {
     	if (value == 7) goShortcut()
@@ -794,13 +799,16 @@ def play() {	log.debug "play"; //sendEvent(name:'changed', value:"play");
 def next() {log.debug "next"; tvCommand(36)}
 
 def goShortcut() { 	
-	if (dispMain == "true") tvChannelChange(7,1,7) else {
-    	if (dispMain == "GoogleCast") goTV() 
+	if (device.currentValue('tvMode') == "true") tvChannelChange(7,1,7) else {
+    	if (device.currentValue('dispMain') == "GoogleCast")  goTV() 
     	else goExit()
-        for (int c = 0; c < 4; c++) { 
-    		delay(1000)
-			tvChannelChange(7,1,7)
-    	}
+        //delayTvChannelChange(7,1,7, 3)
+        //delayTvChannelChange(7,1,7, 5)
+        //delayTvChannelChange(7,1,7, 10)
+      //  delay(200)  
+      //  tvChannelChange(7,1,7)
+        delay(1000)  
+        tvChannelChange(7,1,7)
     }    
 }
 
@@ -951,10 +959,8 @@ def delay(duration, callback = {})
 	callback(dTotalSleep)
 }
 
-
 def delayTvCommand(key, loop, requestId="") {
 	log.debug "delaying..."
-	//loop = loop - 2
 	for (int c = 0; c < loop; c++) { 
     	tvCommand(key,requestId)  
         delay(250)  
@@ -962,19 +968,11 @@ def delayTvCommand(key, loop, requestId="") {
 }
     
 def goUp() {
-	//log.debug "Executing 'goUp'"
-	//def tvMode = device.currentValue('tvMode')
-    //def disp = device.currentValue('dispMain')
-    // if (tvMode == "true") channelUp() else
     if (device.currentValue('shift') == "5") delayTvCommand(12, 3)  else
-    if (device.currentValue('shift') == "10") delayTvCommand(12, 8) else tvCommand(12)   
+    if (device.currentValue('shift') == "10") delayTvCommand(12, 6) else tvCommand(12)   
 }
       
 def goDown() {
-	//log.debug "Executing 'goDown'"
-	//def tvMode = device.currentValue('tvMode')
-    //def disp = device.currentValue('dispMain')
-   // if (tvMode == "true") channelDown() else
     if (device.currentValue('shift') == "5") delayTvCommand(13, 3) else
     if (device.currentValue('shift') == "10") delayTvCommand(13, 6) else tvCommand(13)
 }
@@ -1000,9 +998,10 @@ def refresh()
 	sessionIdCommand()
     if (device.currentValue('switch') == "on") 
     {
+    	log.trace "preoffing = ${state.preOffing}"
     	if (state.preOffing == 'false') {
         	updateDataValue("preOffing","true")
-            runIn(300, "preOff")
+            runIn(90, "preOff")
         	log.debug "scheduling 'preOff()'"
 		}
 		update()
@@ -1011,10 +1010,17 @@ def refresh()
 }
 
 def tvChannelChange(major, minor, phys) {
-    //sendEvent(name:'changed', value:"chChange", displayed: false)
     goCommand("HandleChannelChange",
     			"<major>${major}</major><minor>${minor}</minor><sourceIndex>1</sourceIndex><physicalNum>${phys}</physicalNum>",
                 "channelChange")
+}
+
+def delayTvChannelChange(major, minor, phys, loop) {
+	log.debug "delaying..."
+	for (int c = 0; c < loop; c++) { 
+    	tvChannelChange(major, minor, phys)
+        delay(250)  
+     }
 }
 
 def tvClick() {	goCommand("HandleTouchClick"); 	goCommand("HandleTouchClick")}    
