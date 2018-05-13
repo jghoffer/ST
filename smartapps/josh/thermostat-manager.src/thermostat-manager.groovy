@@ -33,36 +33,30 @@ def updated() {
     unsubscribe()
     subscribe(app, appTouch)
     subscribe(thermostat, "thermostatMode", mode)      
-    subscribe(heatButton, "switch.on", goHeat)
-    subscribe(coolButton, "switch.on", goCool)
+    subscribe(heatButton, "switch.on", goButton)
+    subscribe(coolButton, "switch.on", goButton)
     subscribe(heatButton, "switch.off", off)
     subscribe(coolButton, "switch.off", off)    
 }
 
-def goHeat(evt) {
-	thermostat.heat()
-    coolButton.off() 
-}
-
-def goCool(evt) {
-	thermostat.cool()
-    heatButton.off()
+def goButton(evt) {
+	def v
+    switch(evt.device.label) {
+    	case coolButton.label: v=0; break
+        case heatButton.label: v=1; break
+        default: return
+	}
+	settings["${(["cool","heat"])[v]}Button"].on(); settings["${(["heat","cool"])[v]}Button"].off(); 
+    thermostat."${(["cool","heat"])[v]}"()
 }
 
 def mode(evt) {	
 	log.debug "sync Mode"
-    //heatButton.off()
-    //coolButton.off()  
-	if (evt.value == "heat") heatButton.on()
-	if (evt.value == "cool") coolButton.on() 
-    if (evt.value == "off") {
-    	heatButton.off()
-    	coolButton.off()      
-    }
+    if (evt.value == "off") [heatButton,coolButton]*.off()
+        		else settings["${evt.value}Button"].on()
 }
 
 def off(evt) {
-	log.debug "why $evt.value"
     if ((heatButton.currentValue('switch') == "off") && (coolButton.currentValue('switch') == "off")) {
     	thermostat.off()
        	thermostat.poll()

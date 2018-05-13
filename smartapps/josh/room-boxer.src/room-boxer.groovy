@@ -247,22 +247,16 @@ def indicatorChange(evt) {
         	log.debug "indicator change calling box: $evt.value"
         	if (evt.value == "true") setBox(true)  
             if (evt.value == "false") setBox(false) 
-            //setBox("$evt.value")  
         }    
-    	//if (evt.value == "box") setBox(true)    	
-        //if (evt.value == "unbox") setBox(false)
 	}
 }
 
 def switchChange(evt) {
 	log.debug "SwitchChange: $evt.name: $evt.value $evt.type"
     if (evt.name == "switch" && evt.type != "internal") {
-    	//state.basicSet = false
-        //state.looking = false
         resetState()
 		if (evt.value == "off") { 
         	indicatorDev().off("internal")
-            //setBox(false)
         } else {
     		indicatorDev().on("internal")
     		setActiveAndSchedule(offSwitchTime)               
@@ -291,11 +285,10 @@ def pipeHandler(evt) {
 
 def contactHandler(evt) {
 	log.debug "contactHandler: $evt.name: || value: $evt.value || boxed: $state.boxed || basicSet: $state.basicSet"
-
+	resetState()
 	if (evt.value == "open") {
        	state.backFrom = now()	  
-     	if (state.boxed && lookback) {
-            
+     	if (state.boxed && lookback) {            
    			log.debug "Waiting to look... in $lookTime"
 			runIn(lookTime, looking)
             state.looking = true
@@ -305,12 +298,11 @@ def contactHandler(evt) {
         } else {
         	if (onContact) {
             	log.debug "Turning on lights by contact opening"
-				resetState()
+				//resetState()
                 turnOn()
         	}
-            setBox(false)
     	}
-        //setBox(false)        
+        setBox(false)        
 	} else if (evt.value == "closed") {
     	state.checkFrom = now()
     	if (offContact) setActiveAndSchedule(offContactTime)
@@ -444,8 +436,7 @@ def turnOn() {
     if (modeCheck(modes) && gateCheck(offGates) && gateCheck(onOffGates) && modeCheck(onModes))
 	{
    		switches.on("internal")//.onInternal()
-    	indicatorDev().on("internal")
-        //setBox(false)
+    	indicatorDev().on("internal")\
     } else log.debug "turn on BLOCKED"
 }
 
@@ -456,10 +447,8 @@ def turnOff() {
 		switches.off("internal")//.offInternal()  
     	indicatorDev().off("internal")
     	resetState()
-        //setBox(false)
     } else {
     	log.debug "turn off BLOCKED"
-       // setBox(true)
     }
 }
 

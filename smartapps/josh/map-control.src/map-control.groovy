@@ -38,8 +38,6 @@ def firstPage() {
             input "denMotion2", "capability.motionSensor", multiple: false, title: "Den", submitOnChange: true
         	input "entryMotion", "capability.motionSensor", multiple: false, title: "Entry", submitOnChange: true
         
-        	//input "floorMotion", "capability.motionSensor", multiple: false, title: "Floor", submitOnChange: true
-           // input "tableMotion", "capability.motionSensor", multiple: false, title: "Table", submitOnChange: true
             input "livingMotion", "capability.motionSensor", multiple: false, title: "Living Room", submitOnChange: true
             input "livingMotion2", "capability.motionSensor", multiple: false, title: "Living Room", submitOnChange: true
             input "livingMotion3", "capability.motionSensor", multiple: false, title: "Living Room", submitOnChange: true
@@ -47,34 +45,28 @@ def firstPage() {
             input "kitchenMotionFront", "capability.motionSensor", multiple: false, title: "Kitchen", submitOnChange: true
             input "kitchenMotionBack", "capability.motionSensor", multiple: false, title: "Kitchen", submitOnChange: true
             input "hallMotion", "capability.motionSensor", multiple: false, title: "Hall", submitOnChange: true
-            input "bedroomMotion", "capability.motionSensor", multiple: false, title: "Bedroom", submitOnChange: true
+            input "bedroomMotion", "capability.motionSensor", multiple: true, title: "Bedroom", submitOnChange: true
             input "bedHallMotion", "capability.motionSensor", multiple: false, title: "Bedroom Hall", submitOnChange: true
             
             input "bedBathMotion", "capability.motionSensor", multiple: false, title: "Bed Bathroom", submitOnChange: true
             input "bedBathShowerMotion", "capability.motionSensor", multiple: false, title: "Bed Bathroom S", submitOnChange: true
             input "guestBathMotion", "capability.motionSensor", multiple: false, title: "guest Bathroom", submitOnChange: true
-            input "guestBathShowerMotion", "capability.motionSensor", multiple: false, title: "guest Bathroom S", submitOnChange: true
-            
+            input "guestBathShowerMotion", "capability.motionSensor", multiple: false, title: "guest Bathroom S", submitOnChange: true            
         }
         
-        section("Contacts") {
-        
-			input "denContactL", "capability.contactSensor", multiple: false, title: "Bathroom", submitOnChange: true
-			input "denContactR", "capability.contactSensor", multiple: false, title: "Bathroom", submitOnChange: true
-            
+        section("Contacts") {        
+			input "denContact", "capability.contactSensor", multiple: false, title: "Den", submitOnChange: true
+			
 			input "frontContact", "capability.contactSensor", multiple: false, title: "Front Door", submitOnChange: true
 			input "closetContact", "capability.contactSensor", multiple: false, title: "Front Closet Door", submitOnChange: true
-            input "denClosetContact", "capability.contactSensor", multiple: false, title: "Front Closet Door", submitOnChange: true
+            input "denClosetContact", "capability.contactSensor", multiple: false, title: "Den Closet Door", submitOnChange: true
             input "hvacContact", "capability.contactSensor", multiple: false, title: "HVAC Door", submitOnChange: true
-           // input "gateContact", "capability.contactSensor", multiple: false, title: "Gate Door", submitOnChange: true
-		   // input "pantryContact", "capability.contactSensor", multiple: false, title: "Pantry", submitOnChange: true
-			input "bedBathContact", "capability.contactSensor", multiple: false, title: "Bathroom", submitOnChange: true
-			input "guestBathContact", "capability.contactSensor", multiple: false, title: "Bathroom", submitOnChange: true
+			input "bedBathContact", "capability.contactSensor", multiple: false, title: "Bed Bathroom", submitOnChange: true
+			input "guestBathContact", "capability.contactSensor", multiple: false, title: "Guest Bathroom", submitOnChange: true
 			input "bedroomContact", "capability.contactSensor", multiple: false, title: "Bedroom", submitOnChange: true
             
             input "bedClosetContact", "capability.contactSensor", multiple: false, title: "Bedroom Closet", submitOnChange: true
-            input "laundryContact", "capability.contactSensor", multiple: false, title: "Laundry", submitOnChange: true
-            
+            input "laundryContact", "capability.contactSensor", multiple: false, title: "Laundry", submitOnChange: true            
 		}
         
         section("Temperature") {
@@ -83,13 +75,13 @@ def firstPage() {
             input "guestBathTemp", "capability.temperatureMeasurement", multiple: false, title: "guest Bathroom", submitOnChange: true
             input "livingTemp", "capability.temperatureMeasurement", multiple: false, title: "Living Room", submitOnChange: true
         	input "denTemp", "capability.temperatureMeasurement", multiple: false, title: "Den", submitOnChange: true    
-            input "bedroomTemp", "capability.temperatureMeasurement", multiple: false, title: "Bedroom", submitOnChange: true  
+            input "bedroomTemp", "capability.temperatureMeasurement", multiple: true, title: "Bedroom", submitOnChange: true  
             input "laundryTemp", "capability.temperatureMeasurement", multiple: false, title: "Dryer", submitOnChange: true
-            input "empTemp", "capability.temperatureMeasurement", multiple: false, title: "Thermostat", submitOnChange: true   
-           
+            input "empTemp", "capability.temperatureMeasurement", multiple: false, title: "Thermostat", submitOnChange: true             
         }
+        
         section("Other") {        
-    		input "vibration", "capability.accelerationSensor", title: "Bed Vibration", multiple: false, required: false, submitOnChange: true   
+    		input "vibration", "capability.accelerationSensor", title: "Bed Vibration", multiple: true, required: false, submitOnChange: true   
         }
       
     }
@@ -123,8 +115,8 @@ def updated()
     subscribe(frontContact, "contact", pipeHandler)
     subscribe(closetContact, "contact", pipeHandler)
     subscribe(denClosetContact, "contact", pipeHandler)
-    subscribe(denContactL, "contact", pipeHandler) 
-    subscribe(denContactR, "contact", pipeHandler)
+    subscribe(denContact, "contact", pipeHandler) 
+    
     subscribe(bedBathContact, "contact", pipeHandler)
     subscribe(guestBathContact, "contact", pipeHandler)
     subscribe(bedroomContact, "contact", pipeHandler) 
@@ -142,18 +134,22 @@ def updated()
     subscribe(empTemp, "temperature",pipeHandler) 
     
     subscribe(vibration, "acceleration", pipeHandler)
-    
+/*    
 	settings.each() {
         log.trace "Settings: ${it.value.label}"
     	def evt = it.value?.events(max: 1)
-        if (evt[0]?.name) {	pipeHandler(evt[0]) }
+        log.debug "DEV: ${evt}"
+        if (evt) if (evt[0]?.name) if (evt[0].displayName[1]) {	pipeHandler(evt[0]) }
 	}
+    */
 }
 
 
 def pipeHandler(evt) {
-    log.debug "| $evt.description"
+    log.debug "| $evt.description && $evt.displayName"
     def dev = evt.displayName[1..-1].replaceAll(' ',"")
+    if (vibration.displayName.contains(evt.displayName)) dev = "Bed"
+    if (bedroomMotion.displayName.contains(evt.displayName)) dev = "Bedroom"
     def val = evt.value.replaceAll('inactive',"off").replaceAll('active',"on")
     def cat = evt.name.replaceAll('motion',"Motion").replaceAll('contact',"Contact").replaceAll('temperature',"Temperature").replaceAll('acceleration',"Motion")
     log.debug "dev: $dev, cat: $cat, val: $val"

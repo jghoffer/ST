@@ -56,7 +56,7 @@ def subscriber() {
     if (dimRange) subscribe(dimRange, "level", "handler")
     if (onColor) subscribe(onColor, "color", "handler")
     if (temp) subscribe(temp, "temperature", "handler")
-    if (time) schedule(runTime,timeHandler, [data:[time:time]])
+    if (timer) schedule(timer,timeHandler)
     
     if (slave && offCallback) { slave.each() { subscribe(it, "switch.off", "callbackHandler")} }
 }
@@ -191,15 +191,16 @@ def limitFormat() {
 
 private hideSection(lead) {
   def res = null
+  if (!quickEdit)
   switch(lead) { 
   	  case "switch":	res = physical ||specialSwitch || dimRange || onColor 
       						break
       case "sensors": 	res=movement || contact || meter || 
       						presence || vibration ||
-      						meterValue || temp
+      						meter || temp
                         	break  
                             //
-      case "event": 	res=modeChange || time     						 
+      case "events": 	res=modeChange || timer   						 
 							break  
       case "slave": 	res=slave || colorSlave 
                         	break
@@ -208,13 +209,8 @@ private hideSection(lead) {
      					    dimOn || dimValueOn || dimMasterOn ||
                             colorOn || colorValueOn || colorMasterOn ||
                             statusOn || statusValueOn ||  
-                            phraseOn || msgOn || messageOn
-      						break                            
-      case "specOn":    res=indicatorOn ||
-      						setModeOn || flashOn || 
-      						
-                            indicatorOn || buttonDisplayOn || goDisplayOn ||
-                            goButtonOn || ledOn
+                            phraseOn || msgOn || messageOn ||
+                            setModeOn || customOptionsOn || CamraOn                       
                         	break 
                             
       case "off": 		res=virtualOff || flipOff ||  
@@ -223,13 +219,8 @@ private hideSection(lead) {
                             colorOff || colorValueOff || colorMasterOff ||
                             statusOff || statusValueOff ||
                             phraseOff|| msgOff || messageOff
-                            break                                                     
-      case "specOff":    res=indicatorOff ||
-      						setModeOff || flashOff || 
-      						
-                            indicatorOff || buttonDisplayOff || goDisplayOff ||
-                            goButtonOff || ledOff 
-                        	break  
+                            setModeOff || customOptionsOff || CamraOff
+                        	break                                                 
                             
 	  case "limits": 	res=onGate || offGate ||
      						openContact || closedContact || 
@@ -237,7 +228,7 @@ private hideSection(lead) {
                             presencePresent || presenceNotPresent ||
   							modes || fromTime || toTime
                         	break
-  }                      
+  } else res = true
   
   return res ? false : true
 }
@@ -276,10 +267,34 @@ def configurePage() {
 		section(title: "Events", hideable:true, hidden: hideSection("events")) {       
             input "modeChange", "mode", title: "Mode change", multiple: false, required: false 
             
-            input "time", "time", title: "Time", required: false
+            input "timer", "time", title: "Time", required: false
         }    
 
 	}        
+}
+
+def inpt1(ArrayList parent=[], String name, String type, String title = "", String desc = "", String cap = "") {
+inpt(parent, name, type, title, desc, cap, true)
+	
+ }   
+
+def inpt(ArrayList parent=[], String name, String type, String title = "", String desc = "", String cap = "", Boolean multiple=true) {
+	
+	def parentPassed = true
+    //log.trace "name $name title $title desc $desc parent $parent"
+    parent.each { if (!settings["$it"]) parentPassed = false }
+    def temp = settings["$name"] 
+    if (type == "bool" || type == "text" || type == "number") multiple = false
+	if ((settings["$name"] || !quickEdit) && (!parent || parentPassed))
+	input name, type, title: title, description: desc, required: false, multiple: multiple, submitOnChange: true, capitalization: cap
+}
+
+def inptEnum(ArrayList parent=[], String name, ArrayList opts, String title = "", String desc = "") {
+    def parentPassed = true
+    //log.trace "name $name title $title desc $desc parent $parent"
+    parent.each { if (!settings["$it"]) parentPassed = false }
+	if ((settings["$name"] || !quickEdit) && (!parent || parentPassed))
+	input name, "enum", title: title, description: desc, options: opts, required: false, multiple: false, submitOnChange: true
 }
 
 
@@ -287,97 +302,74 @@ def effectPage() {
 	dynamicPage(name: "effectPage", title: "Effects:", nextPage: "mainPage", uninstall: false) {
     
     	section() {
-			input "slave", "capability.switch", title: "Sync", multiple: true, required: false, submitOnChange: true
-			if (slave) {
-    			input "syncDim", "bool", title: "Dim?", required: false, submitOnChange: true  
-    			if (syncDim) input "dimOnly", "bool", title: "(dim only?)", required: false 
-    			input "offCallback", "bool", title: "Callback (on off())?", required: false, submitOnChange: true  
-        		if (offCallback) input "offCallbackAny", "bool", title: "...even just one?", required: false          
-     		}
-			input "colorSlave", "capability.colorControl", title: "Colors?", multiple: true, required: false, submitOnChange: true 
+        	input "quickEdit", "bool", title: "Quick Edit", submitOnChange: true
+        }
+    	section() {
+        	inpt([], "slave", "capability.switch", "Sync")
+             inpt(["slave"], "syncDim", "bool", "Dim?");  inpt(["slave", "syncDim"], "dimOnly", "bool", "(dim only?)") 
+             inpt(["slave"], "offCallback", "bool", "Callback (on off())?");  inpt(["slave","offCallback"], "offCallbackAny", "bool", "...even just one?")     		
+			 inpt([],"colorSlave", "capability.colorControl", "Colors?")            
 		}
     
-		section(title: "On", hideable:true, hidden: hideSection("on")) {    
-			input "virtualOn", "capability.switch", title: "", description: "On --> On()", multiple: true, required: false
-   			input "flipOn", "capability.switch", title: "", description:"On --> Off()", multiple: true, required: false
-    		input "mimicOn", "capability.switch",  title: "", description:"On --> Mimic", multiple: true, required:false, submitOnChange: true
-    		if (mimicOn) input "masterOn", "capability.switch",  title: "", description: "Master switch:", required: true, multiple: false 
-   
-   			input "dimOn", "capability.switchLevel", title: "Set dimmer", multiple: true, required: false, submitOnChange: true
-    		if (dimOn) {
-   				input "dimOnlyOn", "bool", title: "(dim only?)", required: false  
-				input "dimValueOn", "text",  title: "", description: "Dim value:", required: false
-				input "dimMasterOn", "capability.switchLevel",  title: "", description: "Dim master:", required: false         
-    		}
-			input "colorOn", "capability.colorControl", title: "Set color:", multiple: true, required: false, submitOnChange: true
-    		if (colorOn) {
-           		input "colorOnlyOn", "bool", title: "(color only?)",  submitOnChange: true, required: false  
-                if (colorOnlyOn) input "colorIgnoreOn", "bool", title: "(ignore off?)", submitOnChange: true, required: false  
-
-				input "colorValueOn", "text",  title: "", description: "color value:", required: false
-				input "colorMasterOn", "capability.colorControl", title: "Color master:", multiple: false, required: false, submitOnChange: true        
-    		}    
-    
-    		input "statusOn", "capability.switch", title: "Set status", multiple: true, required: false, submitOnChange: true
-    		if (statusOn) input "statusValueOn", "text",  title: "", description: "status value:", required: false
+		section("On", hideable:true, hidden: hideSection("on")) {    
+			inpt([], "virtualOn", "capability.switch", "", "On --> On()")
+   			inpt([], "flipOn", "capability.switch", "", "On --> Off()")
+    		inpt([], "mimicOn", "capability.switch", "On --> Mimic");	inpt1(["mimicOn"], "masterOn", "capability.switch",  "", "Master switch:")
             
-            input "setModeOn", "mode",  title: "", description: "Change mode to:", multiple: false, required: false, submitOnChange: true
-			def phrases = location.helloHome?.getPhrases()*.label
-			input "phraseOn", "enum",  title: "", description: "Activate routine:", required: false, options: phrases, submitOnChange: true
-    		input "msgOn", "text", title: "Message", description: "Internal", required: false, submitOnChange: true
-    		if (msgOn) {	
-  				input "msgPushOn", "bool", title: "Alert?", required: false, submitOnChange: true 
-  				input "msgFeedOn", "bool", title: "Feed?", required: false, submitOnChange: true      
-			}
-
-    		input "messageOn", "text", title: "", description: "SMS", required: false, submitOnChange: true
-    		if (messageOn) input "phoneOn","phone" ,title: "", required: false  
+   			inpt([], "dimOn", "capability.switchLevel", "Set dimmer");  inpt(["dimOn"], "dimOnlyOn", "bool", "(dim only?)")
+			 inpt(["dimOn"], "dimValueOn", "text",  "", "Dim value:");  inpt(["dimOn"], "dimMasterOn", "capability.switchLevel",  "", "Dim master:")    
             
-    	}
-        
-        section(title: "Off", hideable:true, hidden: hideSection("off")) {    
-      
-        	input "virtualOff", "capability.switch", title: "", description:"Off --> Off()", multiple: true, required: false 
-			input "flipOff", "capability.switch", title: "", description:"Off --> On()", multiple: true, required: false
-
-		    input "mimicOff", "capability.switch",  title: "", description:"Off --> Mimic", multiple: true, required:false, submitOnChange: true    
-    		if (mimicOff) input "masterOff", "capability.switch",  title: "", description: "Master switch:", required: true, multiple: false       
-
-    		input "dimOff", "capability.switchLevel", title: "Set dimmer", multiple: true, required: false, submitOnChange: true
-    		if (dimOff) {
-   				input "dimOnlyOff", "bool", title: "(dim only?)", required: false  
-				input "dimValueOff", "text",  title: "", description: "Dim value:", required: false
-				input "dimMasterOff", "capability.switchLevel",  title: "", description: "Dim mimic:", required: false        
-    		}
-			input "colorOff", "capability.colorControl", title: "Set color", multiple: true, required: false, submitOnChange: true
-    		if (colorOff) {
-                input "colorOnlyOff", "bool", title: "(color only?)",  submitOnChange: true, required: false  
-                if (colorOnlyOff) input "colorIgnoreOff", "bool", title: "(ignore off?)", submitOnChange: true, required: false  
-                
-				input "colorValueOff", "text",  title: "", description: "color value:", required: false
-				input "colorMasterOff", "capability.colorControl", title: "Color master:", multiple: false, required: false, submitOnChange: true        
-    		}    
+			inpt([], "colorOn", "capability.colorControl", "Set color:");	inpt(["colorOn"], "colorOnlyOn", "bool", "(color only?)")  
+             inpt(["colorOnlyOn"], "colorIgnoreOn", "bool", "(ignore off?)")  
+			 inpt(["colorOn"], "colorValueOn", "text",  "", "color value:");	inpt(["colorOn"], "colorMasterOn", "capability.colorControl", "Color master:")        
+    		
+    		inpt([], "statusOn", "capability.switch", "Set status");	inpt(["statusOn"], "statusValueOn", "text",  "", "status value:")           
+            inpt([], "setModeOn", "mode",  "", "Change mode to:")
+			//def phrases = location.helloHome?.getPhrases()*.label
+			inptEnum([], "phraseOn", location.helloHome?.getPhrases()*.label, "", "Activate routine:")
+    		
+            inpt([], "msgOn", "text", "Message", "Internal");	inpt(["msgOn"], "msgPushOn", "bool", "Alert?");	inpt(["msgOn"], "msgFeedOn", "bool", "Feed?")      
+			inpt([], "messageOn", "text", "", "SMS");	inpt(["messageOn"], "phoneOn","phone" ,"") 
             
-			input "statusOff", "capability.switch", title: "Set status", multiple: true, required: false, submitOnChange: true
-    		if (statusOff) input "statusValueOff", "text",  title: "", description: "status value:", required: false
-                
-            input "setModeOff", "mode",  title: "", description: "Change mode to:", multiple: false, required: false, submitOffChange: true
-			def phrases = location.helloHome?.getPhrases()*.label
-			input "phraseOff", "enum",  title: "", description: "Activate routine:", required: false, options: phrases, submitOnChange: true
-    		input "msgOff", "text", title: "Message", description: "Internal", required: false, submitOnChange: true
-    		if (msgOff) {	
-  				input "msgPushOff", "bool", title: "Alert?", required: false, submitOnChange: true 
-  				input "msgFeedOff", "bool", title: "Feed?", required: false, submitOnChange: true      
-			}
-
-    		input "messageOff", "text", title: "", descriptiOff: "SMS", required: false, submitOnChange: true
-    		if (messageOff) input "phoneOff","phOffe" ,title: "", required: false              
-    	}
+            inpt([], "cameraOn", "capability.imageCapture", "Camera", "Take!")
+                        
+         	inpt([], "customOptionsOn", "bool", "Custom?");   def typeOn = "capability.actuator"
+             inptEnum(["customOptionsOn"],"customTypeOn", [["capability.actuator":"Actuator"],["capability.switch":"Switch"],["capability.sensor":"Sensor"]], "Device", "Type");  if (customTypeOn) typeOn = customTypeOn		           
+             inpt(["customOptionsOn"], "customOn", "$typeOn", "", "Device");	inpt(["customOptionsOn", "customOn"], "customCmdOn", "text", "Command", "none")	
+             
+		}
+         
+		section("Off", hideable:true, hidden: hideSection("off")) {    
+			inpt([], "virtualOff", "capability.switch", "", "Off --> Off()")
+   			inpt([], "flipOff", "capability.switch", "", "Off --> On()")
+    		inpt([], "mimicOff", "capability.switch", "Off --> Mimic");	inpt(["mimicOff"], "masterOff", "capability.switch",  "", "Master switch:")
+            
+   			inpt([], "dimOff", "capability.switchLevel", "Set dimmer");  inpt(["dimOff"], "dimOnlyOff", "bool", "(dim only?)")
+			 inpt(["dimOff"], "dimValueOff", "text",  "", "Dim value:");  inpt(["dimOff"], "dimMasterOff", "capability.switchLevel",  "", "Dim master:")    
+            
+			inpt([], "colorOff", "capability.colorControl", "Set color:");	inpt(["colorOff"], "colorOnlyOff", "bool", "(color only?)")  
+             inpt(["colorOnlyOff"], "colorIgnoreOff", "bool", "(ignore off?)")  
+			 inpt(["colorOff"], "colorValueOff", "text",  "", "color value:");	inpt(["colorOff"], "colorMasterOff", "capability.colorControl", "Color master:")        
+    		
+    		inpt([], "statusOff", "capability.switch", "Set status");	inpt(["statusOff"], "statusValueOff", "text",  "", "status value:")           
+            inpt([], "setModeOff", "mode",  "", "Change mode to:")
+			//def phrases = location.helloHome?.getPhrases()*.label
+			inptEnum([], "phraseOff", location.helloHome?.getPhrases()*.label, "", "Activate routine:")
+    		
+            inpt([], "msgOff", "text", "Message", "Internal");	inpt(["msgOff"], "msgPushOff", "bool", "Alert?");	inpt(["msgOff"], "msgFeedOff", "bool", "Feed?")      
+			inpt([], "messageOff", "text", "", "SMS");	inpt(["messageOff"], "phoneOff","phone" ,"") 
+            
+            inpt([], "cameraOff", "capability.imageCapture", "Camera", "Take!")
+                        
+         	inpt([], "customOptionsOff", "bool", "Custom?");   def typeOff = "capability.actuator"
+             inptEnum(["customOptionsOff"],"customTypeOff", [["capability.actuator":"Actuator"],["capability.switch":"Switch"],["capability.sensor":"Sensor"]], "Device", "Type");  if (customTypeOff) typeOff = customTypeOff		           
+             inpt(["customOptionsOff"], "customOff", "$typeOff", "", "Device");	inpt(["customOptionsOff", "customOff"], "customCmdOff", "text", "Command", "none")	
+		}
         
         section("Delay") {
-    		if (!waitOnSecs) input "waitOn", "number", title: "Minutes:", description: " ", required: false, submitOnChange: true
-            input "waitOnSecs", "bool", title: "Seconds:", required: false, submitOnChange: true
-            if (waitOnSecs) input "waitSecs", "number", title: "", description: " ", required: false, submitOnChange: true
+			if (waitOnSecs == false) inpt([], "waitOn", "number", "Minutes:", "")
+        	inpt([], "waitOnSecs", "bool", "Seconds")
+            inpt(["waitOnSecs"], "waitSecs", "number", "", "")
         }    
     }
 }    
@@ -386,20 +378,16 @@ def effectPage() {
 def limitPage() {
 	dynamicPage(name: "limitPage", title: "Limits:", nextPage: "mainPage", uninstall: false) {
 		section("Switch") {
-			input "onGate", "capability.switch", title: "Only if one of these is ON:", multiple: true, required: false
-			input "offGate", "capability.switch", title: "Only if ALL of these are OFF:", multiple: true, required: false
+            inpt([], "onGate", "capability.switch", "Only if one of these is ON:");	inpt([], "offGate", "capability.switch", "Only if ALL of these are OFF:")
         }
 		section("Sensors") {
-	   		input "openContact", "capability.contactSensor", title: "Only if one of these is OPEN:", multiple: true, required: false
-    		input "closedContact", "capability.contactSensor", title: "Only if ALL of these are CLOSED:", multiple: true, required: false
-    		input "activeMotion", "capability.motionSensor", title: "Only if one of these is ACTIVE", multiple: true, required: false
-    		input "inactiveMotion", "capability.motionSensor", title: "Only if ALL of these are INACTIVE", multiple: true, required: false
-    		input "presencePresent", "capability.presenceSensor", title: "Only if ALL of these are PRESENT", multiple: true, required: false
-    		input "presenceNotPresent", "capability.presenceSensor", title: "Only if ALL of these are NOT PRESENT", multiple: true, required: false
+            inpt([], "openContact", "capability.contactSensor", "Only if one of these is OPEN:"); inpt([], "closedContact", "capability.contactSensor", "Only if one of these is CLOSED:")  
+            inpt([], "activeMotion", "capability.motionSensor", "Only if one of these is ACTIVE:"); inpt([], "inactiveMotion", "capability.motionSensor", "Only if one of these is INACTIVE:") 
+            inpt([],  "presencePresent", "capability.presenceSensor", "Only if one of these is PRESENT:"); inpt([], "presenceNotPresent", "capability.presenceSensor", "Only if one of these is NOT PRESENT:") 
 		}
-		section("State") {        
-            href(name:"toTimePage", page:"timePage", title: "Only if BETWEEN", description: timeFormat())
-            input "modes", "mode", title: "Only if in one of these MODES:", multiple: true, required: false 
+		section("State") {     
+        	inpt([], "modes", "mode", "Only if in one of these MODES:")
+            href(name:"toTimePage", page:"timePage", title: "Only if BETWEEN", description: timeFormat()) 
 		}
     }
 }
@@ -428,7 +416,7 @@ def defaultLabel() {
     if (settings["modeChange"]) causes << settings["modeChange"]
     
     ["slave","color","virtualOn","flipOn","mimicOn","dimOn","colorOn","virtualOff","flipOff","mimicOff","dimOff","colorOff"].each{ effectType ->
-    	log.debug "list $effectType and ${settings["$effectType"]}"
+    	//log.debug "list $effectType and ${settings["$effectType"]}"
         if (settings["$effectType"]) effects << settings["$effectType"].join(", ")
     }    
     ["setModeOn","statusValueOn","msgOn","messageOn","setModeOff","statusOff","msgOff","messageOff"].each{ effectType ->
@@ -473,47 +461,22 @@ def colorValue(str) {
 
 
 def gateCheck(){
-    def isMode = !modes || modes.contains(location.mode)
-    
+    def isMode = !modes || modes.contains(location.mode)   
     def between = ((fromTime) && (toTime)) ? timeOfDayIsBetween(fromTime, toTime, new Date(), location.timeZone) : true
     
-	def onGatePass = true
-	if (onGate) {
-  		onGatePass = onGate?.any { it.currentValue('switch').contains("on") } 
-    }
-	def offGatePass = true
-	if (offGate) {
-  		offGatePass = !(offGate?.any { it.currentValue('switch').contains("on") })
-    }
-	def openGatePass = true
-	if (openContact) {
-  		openGatePass = openContact?.any { it.currentValue('contact').contains("open") } 
-    }    
-    def closedGatePass = true
-	if (closedContact) {
-  		closedGatePass = !(closedContact?.any { it.currentValue('contact').contains("open") }) 
-    }        
-    def activeGatePass = true
-	if (activeMotion) {
-  		activeGatePass = !(activeMotion?.any { it.currentValue('motion').contains("inactive") } )
-    }      
-    def inactiveGatePass = true
-	if (inactiveMotion) {
-  		inactiveGatePass = !(inactiveMotion?.any { (it.currentValue('motion') == "active") } )
-    }    
-    def presentGatePass = true
-	if (presencePresent) {
-  		presentGatePass = !(presencePresent?.any { (it.currentValue('presence') == "not present") } )
-    }    
-    def notPresentGatePass = true
-	if (presenceNotPresent) {
-  		notPresentGatePass = !(presenceNotPresent?.any { (it.currentValue('presence') == "present") } )
-    }    
+	def onGatePass=true, offGatePass=true, openGatePass=true, closedGatePass=true, activeGatePass=true, inactiveGatePass=true, presentGatePass=true, notPresentGatePass=true
+	if (onGate) { 		onGatePass = onGate?.any { it.currentValue('switch').contains("on") } }
+	if (offGate) { 		offGatePass = !(offGate?.any { it.currentValue('switch').contains("on") }) }
+	if (openContact) {	openGatePass = openContact?.any { it.currentValue('contact').contains("open") } }    
+	if (closedContact) {	closedGatePass = !(closedContact?.any { it.currentValue('contact').contains("open") }) }        
+	if (activeMotion) {	activeGatePass = !(activeMotion?.any { it.currentValue('motion').contains("inactive") }) }      
+	if (inactiveMotion) {	inactiveGatePass = !(inactiveMotion?.any { (it.currentValue('motion') == "active") }) }    
+	if (presencePresent) {	presentGatePass = !(presencePresent?.any { (it.currentValue('presence') == "not present") }) }    
+	if (presenceNotPresent) {	notPresentGatePass = !(presenceNotPresent?.any { (it.currentValue('presence') == "present") }) }    
     
-    def report = "onGatePass $onGatePass && offGatePass $offGatePass && openGatePass $openGatePass && closedGatePass $closedGatePass" +
+    log.trace  "onGatePass $onGatePass && offGatePass $offGatePass && openGatePass $openGatePass && closedGatePass $closedGatePass" +
     			"&& activeGatePass $activeGatePass && inactiveGatePass $inactiveGatePass && presentGatePass $presentGatePass && notPresentGatePass $notPresentGatePass " +
             	"|| isMode $isMode && between $between"
-    log.trace report
     return onGatePass && offGatePass && 
     	openGatePass && closedGatePass && 
         activeGatePass && inactiveGatePass &&
@@ -530,8 +493,7 @@ def handler(evt) {
 }
 
 
-def timeHandler(time) {
-	//def timeEvent = 
+def timeHandler() {
 	runStuff(createEvent(name: "time", value: "time"))
 }
 
@@ -634,7 +596,9 @@ def runStuff(evt) {
         
         if (dims) {
        		def dimVals = settings["dimValue$val"]
-        	if (!dimVals) dimVals = settings["dimMaster$val"]?.currentValue('level') 
+            
+        	if (!dimVals) dimVals = settings["dimMaster$val"]?.currentValue('level')[0] 
+            log.debug "dimVals = ${dimVals}"
             
             dims?.each() {
             	if ((it.currentValue('switch')?.contains('on')) || (!settings["dimOnly$val"])) {
@@ -741,6 +705,30 @@ def runStuff(evt) {
         	if (phoneMsg == "Stat") phoneMsg = "$dev is $desc" 
 			sendSmsMessage(settings["phone$val"] ?: "(202) 679-2566", phoneMsg)
 		}
+        
+        def camera = settings["camera$val"]   
+        if (camera) {
+        	camera?.take()
+        }
+        
+        
+        def custom = settings["custom$val"]
+        if (custom && settings["customOptions$val"]) {
+        	log.trace "CUSTOM: custom$val:$custom AND customCmd$val"
+        	def cmdTxt = settings["customCmd$val"]
+            if (!cmdTxt.contains("(")) cmdTxt = cmdTxt.replaceFirst(' ',"(")
+            if (cmdTxt[-1] == ")") cmdTxt = cmdTxt[0..-2]
+            def cmds = cmdTxt.replaceAll(',',"(").split('\\(')
+            
+           
+           log.trace "CMDS = $cmds"
+           if (custom.hasCommand(cmds[0])) switch(cmds.length) {
+           	case 1: custom."${cmds[0]}"(); break
+            case 2: custom."${cmds[0]}"(cmds[1]); break
+            case 3: custom."${cmds[0]}"(cmds[1], cmds[2]); break
+            //case 4: custom."${cmds[0]}"(cmds[1], cmds[2], cmds[3]); break
+           } 
+        }    
     }    
 }	}
 

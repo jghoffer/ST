@@ -37,7 +37,7 @@ def processA(){
 
 def sendJSON(outputTxt){
     log.debug outputTxt
-    return ["voiceOutput":outputTxt]
+    return ["voiceOutput":outputTxt+"!"]
 }
 
 def displayData(){
@@ -52,23 +52,26 @@ def processTV() {
     log.debug "-Device command received-"
 	def dev = params.Device ?: "undefined" 	//Label of device
 	def op = params.Operator ?: "undefined"	//Operation to perform
-   // def numVal = params.Num ?: "undefined"    //Number for dimmer/PIN type settings
     def param = params.Param ?: "undefined" 	//Other parameter (color)
+    def cmd = params.Cmd ?: "undefined"
+    
+    if (cmd == "louder" || cmd == "quieter") dev = "volume" 
+    if (cmd == "louder") op = "increase"
+    if (cmd == "quieter") op = "decrease"
+    
     log.debug "Dev: " + dev
     log.debug "Op: " + op
-    //log.debug "Num: " + numVal
     log.debug "Param: " + param
+    log.debug "Cmd: " + cmd
     def num = 0
     try {
     	num = param as int	
     } catch (e){ num = 0 }
     
-    sendNotificationEvent("$params")
     
     String outputTxt = ""
     if (state.devList.contains(dev)) {
-		if (num == 0)  outputTxt = getReply (dev, op, num, param) 
-        else if (op == "status" || (op=="undefined" && param=="undefined" && num==0)) 
+        if (op == "status" || (op=="undefined" && param=="undefined" && num==0)) 
         	outputTxt = getReply (dev, "status", "", "") 
 		else if (op == "events" || op == "event") {	
             def finalCount = num != 0 ? num as int : eventCt ? eventCt as int : 0
@@ -84,7 +87,7 @@ def processTV() {
 
 def getReply(dev, op, num, param){
 	String result = ""
-    log.debug "$dev to $op"
+    
     try {
   		def STdevice = getChildDevice(tvId())
     	if (op=="status") {
@@ -95,53 +98,43 @@ def getReply(dev, op, num, param){
                 def level = STdevice.currentValue("level")
                 result += onOffStatus == "on" && level ? ", and it's set to ${level}%" : ""
                 log.trace result
-            }
-            else result = "The ${STdevice} is currently ${STdevice.currentValue(dev)}. "
+            } else result = "The ${STdevice} is currently ${STdevice.currentValue(dev)}. "
         } else if (dev=="volume" || dev == "level" || dev=="switch") {
-                num = num < 0 ? 0 : num >99 ? 100 : num
-                def overRideMsg = "" 
-                if ((op == "increase" || op=="raise" || op=="up" || op == "decrease" || op=="down" || op=="lower") && (dev=="volume" || dev == "level")){ 
-                     def newValues = upDown(STdevice, dev, op, num)
-                                              
-                     num = newValues.newLevel
-                     op= num > 0 ? "on" : "off"
-                     
-                     overRideMsg = newValues.msg
-                }
-
-                if ((dev=="volume" || dev == "level") && num==0 ){
-                   	if (num==0 && op=="undefined" && param=="undefined") op="off"
-                	if (op=="on" || op=="off"){
-                		STdevice."$op"() 
-                       	result = overRideMsg ? overRideMsg: "I am turning the ${STdevice} ${op}. "
-                   	}
-                   	if (op=="toggle") {
-        				def oldstate = STdevice.currentValue("switch")
-                       	def newstate = oldstate == "off" ? "on" : "off"
-        				STdevice."$newstate"()
-                       	result = "I am toggling the ${STdevice} from '${oldstate}' to '${newstate}'. "
-                    }
-                 }   
-                 //sendNotificationEvent("num: $num")
-            	 if ((dev=="volume" || dev == "level") && num > 0) {
-                 	
+        	num = num < 0 ? 0 : num >99 ? 100 : num
+            if (dev=="volume" || dev == "level" && num > 0) {
+            	if (op == "increase" || op=="raise" || op=="up" || op == "decrease" || op=="down" || op=="lower") { 
+            		def newValues = upDown(STdevice, dev, op, num)
+                	num = newValues.newLevel
                 	STdevice.setLevel(num)
-                	result = overRideMsg ? overRideMsg : "I am setting the ${STdevice} to ${num}%. " 
+                	result = newValues.msg
+            	} else if (op == "undefined") {
+                	STdevice.setLevel(num)
+                	result = "I am setting the ${STdevice} to ${num}%. "
+            	}
+			}
+            if ((dev=="power" || dev == "mute") && num==0 ) {
+                if (op=="on" || op=="off"){
+                	STdevice."$op"() 
+                	result = "I am turning the ${STdevice} ${op}. "
                 }
-            
-    		}
-	}
-    catch (e){ result = "I could not process your request for the '${dev}'."}// $e %1%" }
+                if (op=="toggle") {
+        			def oldstate = STdevice.currentValue("switch")
+                    def newstate = oldstate == "off" ? "on" : "off"
+        			STdevice."$newstate"()
+                    result = "I am toggling the ${STdevice} from '${oldstate}' to '${newstate}'. "
+                }
+            }              
+    	}
+	} catch (e){ result = "I could not process your request for the '${dev}'."}// $e %1%" }
 //    if (op=="status" && result && !result.endsWith("%")) result += "%2%"
 //    if (op!="status" && result && !result.endsWith("%")) result += "%3%"
 //    if (!result) result = "Sorry, I had a problem understanding your request. %1%"
-    sendNotificationEvent("$result")
+
     return result
 }
 
 def upDown(tv, dev, op, num){
     def numChange,newLevel, defMove, txtRsp = ""
-     sendNotificationEvent("$dev, $op, $num")
     if (dev == "volume") defMove = 5
     if (dev == "channel") defMove = 1
 	if (op == "increase" || op=="raise" || op=="up")  numChange = num == 0 ? defMove : num > 0 ? num : 0
