@@ -563,7 +563,7 @@ def runStuff(evt) {
     }
 
     if (cat == "temperature") {
-    	def valInt =  Math.round(evt.numericValue)
+    	def valInt = val as Integer //Math.round(val)//evt.numericValue)
         desc = valInt as String
         if (!tempValue) val = "On" else
 		val = (tempValue > valInt)  ? "Off" : "On"  
@@ -696,13 +696,14 @@ def runStuff(evt) {
         
         def msg = settings["msg$val"]
         if (msg) {
+            if (msg == "stat") msg = "$dev is $desc" 			
         	if (settings["msgPush$val"]) sendPushMessage("$msg")
             if (settings["msgFeed$val"]) sendNotificationEvent("$msg")
         }    
               
         def phoneMsg = settings["message$val"]
         if (phoneMsg) {
-        	if (phoneMsg == "Stat") phoneMsg = "$dev is $desc" 
+        	if (phoneMsg == "stat") phoneMsg = "$dev is $desc" 
 			sendSmsMessage(settings["phone$val"] ?: "(202) 679-2566", phoneMsg)
 		}
         

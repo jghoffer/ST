@@ -45,7 +45,8 @@ def firstPage() {
             input "kitchenMotionFront", "capability.motionSensor", multiple: false, title: "Kitchen", submitOnChange: true
             input "kitchenMotionBack", "capability.motionSensor", multiple: false, title: "Kitchen", submitOnChange: true
             input "hallMotion", "capability.motionSensor", multiple: false, title: "Hall", submitOnChange: true
-            input "bedroomMotion", "capability.motionSensor", multiple: true, title: "Bedroom", submitOnChange: true
+            input "bedroomMotion", "capability.motionSensor", multiple: false, title: "Bedroom", submitOnChange: true
+            input "bedroomExtraMotion", "capability.motionSensor", multiple: false, title: "Bedroom", submitOnChange: true
             input "bedHallMotion", "capability.motionSensor", multiple: false, title: "Bedroom Hall", submitOnChange: true
             
             input "bedBathMotion", "capability.motionSensor", multiple: false, title: "Bed Bathroom", submitOnChange: true
@@ -81,7 +82,8 @@ def firstPage() {
         }
         
         section("Other") {        
-    		input "vibration", "capability.accelerationSensor", title: "Bed Vibration", multiple: true, required: false, submitOnChange: true   
+    		input "vibrationL", "capability.accelerationSensor", title: "Bed Vibration Left", multiple: true, required: false, submitOnChange: true  
+            input "vibrationR", "capability.accelerationSensor", title: "Bed Vibration Right", multiple: true, required: false, submitOnChange: true 
         }
       
     }
@@ -107,6 +109,7 @@ def updated()
     subscribe(kitchenMotionBack, "motion", pipeHandler)
     subscribe(hallMotion, "motion", pipeHandler)
     subscribe(bedroomMotion, "motion", pipeHandler)
+    subscribe(bedroomExtraMotion, "motion", pipeHandler)
     subscribe(bedBathMotion, "motion", pipeHandler)
     subscribe(bedBathShowerMotion, "motion", pipeHandler)
     subscribe(guestBathMotion, "motion", pipeHandler)
@@ -133,7 +136,8 @@ def updated()
     subscribe(laundryTemp, "temperature", pipeHandler)  
     subscribe(empTemp, "temperature",pipeHandler) 
     
-    subscribe(vibration, "acceleration", pipeHandler)
+    subscribe(vibrationL, "acceleration", pipeHandler)
+    subscribe(vibrationR, "acceleration", pipeHandler)
 /*    
 	settings.each() {
         log.trace "Settings: ${it.value.label}"
@@ -148,8 +152,13 @@ def updated()
 def pipeHandler(evt) {
     log.debug "| $evt.description && $evt.displayName"
     def dev = evt.displayName[1..-1].replaceAll(' ',"")
-    if (vibration.displayName.contains(evt.displayName)) dev = "Bed"
-    if (bedroomMotion.displayName.contains(evt.displayName)) dev = "Bedroom"
+    if (evt.name.contains("acceleration")) {
+       log.trace "motion yes"
+       if (vibrationL.displayName.contains(evt.displayName)) dev = "BedL"
+       if (vibrationR.displayName.contains(evt.displayName)) dev = "BedR"
+    } else if (evt.name == "temperature") 
+       if (bedroomTemp.displayName.contains(evt.displayName)) dev = "Bedroom"
+    
     def val = evt.value.replaceAll('inactive',"off").replaceAll('active',"on")
     def cat = evt.name.replaceAll('motion',"Motion").replaceAll('contact',"Contact").replaceAll('temperature',"Temperature").replaceAll('acceleration',"Motion")
     log.debug "dev: $dev, cat: $cat, val: $val"
