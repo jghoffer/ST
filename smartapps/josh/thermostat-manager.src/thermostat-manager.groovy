@@ -65,5 +65,5 @@ def off(evt) {
 
 def doPoll() {
 	thermostat.poll()
-	runIn( (pollingInterval * 60), doPoll)
+	runIn( (pollingInterval * 60), "doPoll")
 }

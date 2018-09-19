@@ -44,7 +44,10 @@ def subscriber() {
 	if (physical) {
     	subscribe(physical, "switch", "handler")
        	if (syncDim) subscribe(physical, "level", "handler") 
-        if (colorSlave) subscribe (physical, "color", "handler")      
+        if (colorSlave) {
+        	subscribe (physical, "color", "handler") 
+            subscribe (physical, "colorTemperature", "handler")
+        }    
     }    
     if (movement) subscribe(movement, "motion", "handler")  
 	if (contact) subscribe(contact, "contact", "handler")
@@ -520,22 +523,32 @@ def runStuff(evt) {
       	log.debug "${dims*.currentValue('switch')}"
     }  
     
-    if (cat == "color" && colorSlave) {
-        def hue
-        def saturation
- 		physical.each() {
-            hue = 	it.currentValue("hue")
-        	saturation = it.currentValue("saturation")
-        }          
-        log.trace "final hue | saturation is $hue | $saturation --  value is $val"
-        Map colorMap =  [hue: hue, saturation: saturation, hex: val]
-	 	
-        colorSlave.each() {if (it.currentValue('switch').contains('on')) {    	
- 		  it.setColor(hex: val)
-		//  it.setHue(hue)
-       	//  it.setSaturation(saturation)
-        }  }
-  	}    
+    if (cat == "color" && colorSlave && onColor) {
+    	log.debug "going: color sync"
+        def hueColor = onColor.latestValue("hue")[0]
+        def saturation = onColor.latestValue("saturation")[0]
+        
+        colorSlave.each() {      
+        	
+            if (it.hasCommand("setColor")) 
+               	it.setColor([hue:hueColor, saturation:saturation, hex:colorUtil.hslToHex((hueColor) as int, (saturation) as int)])
+            if (it.hasCommand("setHue")) {
+         		it.setHue(hueColor)                
+               	it.setSaturation(saturation)
+            }   
+            if (saturation < 20) cat = "colorTemperature"
+        }
+	}
+    
+    if (cat == "colorTemperature" && colorSlave && onColor) {  
+   		log.debug "going: colorTemp sync"
+        def colorTemp = 3500	
+        if (onColor.hasAttribute("colorTemperature")) colorTemp = onColor.latestValue("colorTemperature")[0] ?: 3500 
+ 		colorSlave.each() {          	
+			if (it.hasCommand("setColorTemperature")) if (it.currentValue("colorTemperature") != colorTemp)
+               	it.setColorTemperature(colorTemp) 
+        }        
+    }
 	// 			SYNC BLOCK		//  
     
     if (cat == "switch") {cat = (!hardOn || typ == "physical") ? "OnOff" : "ignore"}
@@ -608,6 +621,7 @@ def runStuff(evt) {
                         if ((curDim + newDim) < 0) newDim = 0
                         log.debug "dimVals $dimVals = newDim $newDim + curDim $curDim and ${dimVals.contains("-")} or ${dimVals.contains("+")}"
 						dimVals = curDim + newDim
+                        log.trace "setlevel $dimVals"
                     }   
                     it.setLevel(dimVals)                    
                 }
@@ -628,7 +642,7 @@ def runStuff(evt) {
                 if (colorVal == "White") saturation = 10
                 log.debug "hue is $hueColor" 
             } else {
-        		def colorMaster = settings["colorMaster$val"]
+        		def colorMaster = settings["colorMaster$val"][0]
                 if (colorMaster) {
             		hueColor = colorMaster.latestValue("hue")
             		saturation = colorMaster.latestValue("saturation")
@@ -636,7 +650,7 @@ def runStuff(evt) {
                     	colorTemp = colorMaster.latestValue("colorTemperature")
             	}
         	}
-            log.trace "colors are ${colors.currentValue('switch')} and $saturation"
+            log.trace "colors are ${colors.currentValue('switch')} || $hueColor and $saturation"
             log.trace "hex = ${colorUtil.hslToHex((hueColor / 3.6) as int, (saturation) as int)}"
             log.debug "hex = ${colorUtil.hslToHex((hueColor) as int, (saturation) as int)}" 
             

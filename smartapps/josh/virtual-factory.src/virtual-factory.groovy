@@ -68,7 +68,7 @@ def addDevice()
   if (!d) 
   {
   	log.debug "Hub: " + location.hubs[0].id
-    addChildDevice("Virtual", "Custom Virtual Dimmer", dni, null, 
+    addChildDevice("Room", "State Switch", dni, null, 
     	[
         	name: "Virtual$dni", 
             label: childName, 

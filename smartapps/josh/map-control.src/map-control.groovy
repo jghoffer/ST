@@ -61,7 +61,7 @@ def firstPage() {
 			input "frontContact", "capability.contactSensor", multiple: false, title: "Front Door", submitOnChange: true
 			input "closetContact", "capability.contactSensor", multiple: false, title: "Front Closet Door", submitOnChange: true
             input "denClosetContact", "capability.contactSensor", multiple: false, title: "Den Closet Door", submitOnChange: true
-            input "hvacContact", "capability.contactSensor", multiple: false, title: "HVAC Door", submitOnChange: true
+            //input "hvacContact", "capability.contactSensor", multiple: false, title: "HVAC Door", submitOnChange: true
 			input "bedBathContact", "capability.contactSensor", multiple: false, title: "Bed Bathroom", submitOnChange: true
 			input "guestBathContact", "capability.contactSensor", multiple: false, title: "Guest Bathroom", submitOnChange: true
 			input "bedroomContact", "capability.contactSensor", multiple: false, title: "Bedroom", submitOnChange: true
@@ -125,7 +125,7 @@ def updated()
     subscribe(bedroomContact, "contact", pipeHandler) 
     subscribe(bedClosetContact, "contact", pipeHandler) 
     subscribe(laundryContact, "contact", pipeHandler) 
-    subscribe(hvacContact, "contact", pipeHandler) 
+    //subscribe(hvacContact, "contact", pipeHandler) 
     
     subscribe(kitchenTemp, "temperature", pipeHandler)    
     subscribe(denTemp, "temperature", pipeHandler)
@@ -156,8 +156,10 @@ def pipeHandler(evt) {
        log.trace "motion yes"
        if (vibrationL.displayName.contains(evt.displayName)) dev = "BedL"
        if (vibrationR.displayName.contains(evt.displayName)) dev = "BedR"
-    } else if (evt.name == "temperature") 
+    } else if (evt.name == "temperature") {
        if (bedroomTemp.displayName.contains(evt.displayName)) dev = "Bedroom"
+       if (denTemp.displayName.contains(evt.displayName)) dev = "Den"
+    }
     
     def val = evt.value.replaceAll('inactive',"off").replaceAll('active',"on")
     def cat = evt.name.replaceAll('motion',"Motion").replaceAll('contact',"Contact").replaceAll('temperature',"Temperature").replaceAll('acceleration',"Motion")
