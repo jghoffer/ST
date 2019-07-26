@@ -414,10 +414,8 @@ def updateDevices() {
 			state.devices[device.id] = [online: !device.connected]
 		}
         
-        if (!device.connected && breaker) {
-        	breaker.off()
-            log.debug "breaker: ${breaker.currentValue("switch")}"
-            breaker.on()
+        if (!device.connected) {
+        	
      	}
       //  log.debug "Devices: ${state.devices} || Device(device.id): ${state.devices[device.id]}"
       //  log.debug "GO: ${childDevice.currentValue('switch')}"
@@ -430,6 +428,7 @@ def updateDevices() {
 			// Device went offline after being online
 			childDevice?.sendEvent(name: "DeviceWatch-DeviceStatus", value: "offline", displayed: false)
 			log.debug "$device went Offline"
+            runIn(60,"updateDevices")
 		}
 		state.devices[device.id] = [online: device.connected]
 	}

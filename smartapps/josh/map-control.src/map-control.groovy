@@ -1,22 +1,8 @@
-/**
- *  Smart Timer
- *  Loosely based on "Light Follows Me"
- *
- *  This prevent them from turning off when the timer expires, if they were already turned on
- *
- *  If the switch is already on, if won't be affected by the timer  (Must be turned of manually)
- *  If the switch is toggled while in timeout-mode, it will remain on and ignore the timer (Must be turned of manually)
- *
- *  The timeout perid begins when the contact is closed, or motion stops, so leaving a door open won't start the timer until it's closed.
- *
- *  Author: andersheie@gmail.com
- *  Date: 2014-08-31
- */
 
 definition(
     name: "Map Control",
     namespace: "Josh",
-    author: "listpope@cox.net",
+    author: "Josh",
     description: " . ",
     category: "Convenience",
     iconUrl: "http://upload.wikimedia.org/wikipedia/commons/6/6a/Light_bulb_icon_tips.svg",
@@ -44,6 +30,7 @@ def firstPage() {
             
             input "kitchenMotionFront", "capability.motionSensor", multiple: false, title: "Kitchen", submitOnChange: true
             input "kitchenMotionBack", "capability.motionSensor", multiple: false, title: "Kitchen", submitOnChange: true
+            input "kitchenMotionBar", "capability.motionSensor", multiple: false, title: "Kitchen Bar", submitOnChange: true
             input "hallMotion", "capability.motionSensor", multiple: false, title: "Hall", submitOnChange: true
             input "bedroomMotion", "capability.motionSensor", multiple: false, title: "Bedroom", submitOnChange: true
             input "bedroomExtraMotion", "capability.motionSensor", multiple: false, title: "Bedroom", submitOnChange: true
@@ -107,6 +94,7 @@ def updated()
     subscribe(livingMotion3, "motion", pipeHandler) 
     subscribe(kitchenMotionFront, "motion", pipeHandler)    
     subscribe(kitchenMotionBack, "motion", pipeHandler)
+    subscribe(kitchenMotionBar, "motion", pipeHandler)
     subscribe(hallMotion, "motion", pipeHandler)
     subscribe(bedroomMotion, "motion", pipeHandler)
     subscribe(bedroomExtraMotion, "motion", pipeHandler)

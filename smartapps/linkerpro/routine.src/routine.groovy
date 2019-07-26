@@ -1,7 +1,7 @@
 definition(
     name: "Routine",
     namespace: "linkerPro",
-    author: "Your Name",
+    author: "Josh",
     description: "A simple app to control basic lighting automations. This is a child app.",
     category: "My Apps",
 
@@ -35,16 +35,17 @@ def updated() {
 def initialize() {
     if (!customTitle) app.updateLabel("[$parent.label] ${defaultLabel()}")
     else app.updateLabel("[$parent.label] $customTitle")
-
+	
     subscriber()
 }
 
 def subscriber() {
 	unsubscribe()
+    state.killed = "false"
 	if (physical) {
     	subscribe(physical, "switch", "handler")
        	if (syncDim) subscribe(physical, "level", "handler") 
-        if (colorSlave) {
+        if (syncCol) {
         	subscribe (physical, "color", "handler") 
             subscribe (physical, "colorTemperature", "handler")
         }    
@@ -54,14 +55,23 @@ def subscriber() {
     if (presence) subscribe(presence, "presence", "handler")
     if (vibration) subscribe(vibration, "acceleration", "handler")
     if (modeChange) subscribe(location, "handler")  
-    if (specialSwitch) subscribe(specialSwitch, "status", "handler") 
+    
+    if (specialSwitch) subscribe(specialSwitch, settings["specialAttribute"] ?: "status", "handler") 
  	if (meter) subscribe(meter, "power", "handler")
     if (dimRange) subscribe(dimRange, "level", "handler")
-    if (onColor) subscribe(onColor, "color", "handler")
+    if (onColor) {
+    	subscribe (onColor, "color", "handler") 
+        subscribe (onColor, "colorTemperature", "handler")
+    }    
     if (temp) subscribe(temp, "temperature", "handler")
     if (timer) schedule(timer,timeHandler)
-    
+    if (buttonPush) subscribe(buttonPush, "button", "handler")   
+      
     if (slave && offCallback) { slave.each() { subscribe(it, "switch.off", "callbackHandler")} }
+    
+    if (killSwitch) subscribe(killSwitch,"switch","killHandler")
+    if (killSensor) ["motion","contact","presence","acceleration","power","temperature"].each { cap -> subscribe(killSensor, cap, "killHandler") }
+    //if (killSensor) subscribe(killSensor,"sensor","killHandler")
 }
 
 def mainPage() {
@@ -69,7 +79,9 @@ def mainPage() {
         section ("Assignments") {
     			href(name:"toNextPage", page:"configurePage", description: configureFormat(),title: "Cause")
                 href(name:"toNextPage", page:"effectPage", description: eventFormat(),title: "Effects")
+                if (!hideSection("limits") || !quickEdit) 
                 href(name:"toNextPage", page:"limitPage", description: limitFormat(),title: "Limits") 
+                inptSimp("quickEdit", "bool", "Quick Edit")
         }
         section ("App Name") {        
 			input("customTitle","text",title:"",description:"custom title",required:false, submitOnChange: true)
@@ -80,11 +92,12 @@ def mainPage() {
 def configureFormat() {
             	def working = "["
             	["physical", "n",
-                 "dimRange","dimAbove","dimBelow","nn",
+                 "specialSwitch","specialAttribute","specialValue","nn",
+                 "dimRange","dimAbove","dimBelow","n",
                  "onColor","nn",
                  "movement","contact","presence","vibration","meter","temp","nn",
-                 "modeChange","nn","buttonSwitch","buttonValue","n",
-                 "specialSwitch","specialValue","n"].each{
+                 "modeChange","nn","buttonPush","buttonValue","n",
+                 ].each{
                 	def inp = settings[it]
                 	if (inp) working = working +"\n$it: $inp"
                     if (it == "nn") working = working +"\n\n"
@@ -106,7 +119,7 @@ def configureFormat() {
 }      
 def eventFormat() {
             	def working = "["
-            	["slave", "colorSlave","nn",
+            	["slave", "collave","nn",
                 "On",
                 "virtualOn","n","flipOn","n",
                 "mimicOn", "masterOn","n",
@@ -114,7 +127,8 @@ def eventFormat() {
                 "colorOn","colorValueOn","colorMasterOn", "n",
                 "setModeOn","n",
                 "statusOn", "statusValueOn","n",  
-                "phraseOn","msgOn","phoneOn", "messageOn","nn",
+                "phraseOn","msgOn","phoneOn", "messageOn","n",
+                 "customOn","customCmdOn","nn",
                 "Off",
                 "virtualOff","n","flipOff","n",
                 "mimicOff", "masterOff","n",
@@ -122,7 +136,8 @@ def eventFormat() {
                  "colorOff","colorValueOff","colorMasterOff", "n",
                  "setModeOff","n",
                  "statusOff", "statusValueOff","n", 
-                 "phraseOff","msgOff","phoneOff","messageOff"].each{
+                 "phraseOff","msgOff","phoneOff","messageOff", "n",
+                 "customOff","customCmdOff"].each{
                 	def inp
                     if (it == "nn") working = working +"|n|" else
                     if (it == "n") working = working +"\n" else
@@ -136,11 +151,11 @@ def eventFormat() {
                         if (inp) working = working +"$it: $inp  "
                     }
                 }
-                log.debug working
+               // log.debug working
                 working = working+"]"
                 working = working.replaceAll('slave:',"Sync").replaceAll('virtualOn',"Turn on").replaceAll('virtualOff',"Turn off").replaceAll('flipOn',"Turn off").replaceAll('flipOff',"Turn on")
                 
-                log.trace working
+                //log.trace working
                 int index = 0
   				while (index != -1) {
                 	working = working.replaceAll('\n\n',"\n")
@@ -150,7 +165,7 @@ def eventFormat() {
                 working = working.replaceAll('\\|n\\|',"\n\n")
                 if (waitOnSecs) working = working +"\n(wait: $waitSecs seconds)" 
                 else if (waitOn) working = working +"\n(wait: $waitOn minutes)"
-                log.debug working
+               // log.debug working
                 
                 index = 0
                 while (index != -1) {
@@ -188,26 +203,27 @@ def limitFormat() {
 	if (presenceNotPresent) working = working +"\n\nIf not present: $presenceNotPresent"
     if (modes) working = working +"\n\nIf mode is: $modes"
     if (fromTime && toTime) working = working +"\n\nIf time is between: ${timeFormat()}"
-             	
+    if ((killSwitch || killSensor) && killVal) working = working +"\n\nKILL if ${(killSwitch) ?: killSensor} is $killVal"
+    
     return (working.size() > 0) ? working[2..-1].replaceAll('\\[',"").replaceAll('\\]',"") : "(none)"
 }
 
 private hideSection(lead) {
   def res = null
-  if (!quickEdit)
+  //if (!quickEdit)
   switch(lead) { 
-  	  case "switch":	res = physical ||specialSwitch || dimRange || onColor 
+  	  case "switch":	res = physical ||specialSwitch || dimRange || onColor || buttonPush 
       						break
       case "sensors": 	res=movement || contact || meter || 
       						presence || vibration ||
-      						meter || temp
+      						meter || temp 
                         	break  
                             //
       case "events": 	res=modeChange || timer   						 
 							break  
       case "slave": 	res=slave || colorSlave 
                         	break
-      case "on": 		res=virtualOn || flipOn || 
+      case ["on","On"]: 		res=virtualOn || flipOn || 
       						mimicOn || masterOn ||
      					    dimOn || dimValueOn || dimMasterOn ||
                             colorOn || colorValueOn || colorMasterOn ||
@@ -216,108 +232,104 @@ private hideSection(lead) {
                             setModeOn || customOptionsOn || CamraOn                       
                         	break 
                             
-      case "off": 		res=virtualOff || flipOff ||  
+      case ["off","Off"]: 		res=virtualOff || flipOff ||  
       						mimicOff || masterOff ||
       						dimOff || dimValueOff || dimMasterOff ||
                             colorOff || colorValueOff || colorMasterOff ||
                             statusOff || statusValueOff ||
-                            phraseOff|| msgOff || messageOff
+                            phraseOff|| msgOff || messageOff ||
                             setModeOff || customOptionsOff || CamraOff
-                        	break                                                 
+                        	break    
+                            
+      case "delay":			res=waitOn || waitOnSecs
+      						break
                             
 	  case "limits": 	res=onGate || offGate ||
      						openContact || closedContact || 
                             activeMotion || inactiveMotion ||
                             presencePresent || presenceNotPresent ||
-  							modes || fromTime || toTime
-                        	break
-  } else res = true
+  							modes || fromTime || toTime || killSwitch || killSensor
+                        	break 
+	  case "limSwitch": 	res=onGate || offGate
+     						break   
+	  case "limSensor": 	res=openContact || closedContact || 
+                            activeMotion || inactiveMotion ||
+                            presencePresent || presenceNotPresent
+                        	break                             
+	  case "limEvent": 		res=modes || fromTime || toTime || killSwitch || killSensor
+                        	break                             
+                            
+  }// else res = true
   
   return res ? false : true
 }
 
 def configurePage() {
 	dynamicPage(name: "configurePage", title: "Causes:", nextPage: "mainPage", uninstall: false) {
-		section("switch", hideable:true, hidden: hideSection("switch")) {
-		    input "physical", "capability.switch", title: "", description: "Switch", multiple: true, required: false, submitOnChange: true
-    		if (physical) {
- 				input "hardOn", "bool", title: "(hard push?)", required: false
-			}
-    		input "dimRange", "capability.switch", title: "Dimmer", multiple: true, required: false, submitOnChange: true
-    		if (dimRange) {    
-    			input "dimAbove", "number",  title: "", description: "Above", required: false
-        		input "dimBelow", "number",  title: "", description: "Below", required: false
- 			}
-            input "onColor", "capability.colorControl", title: "Color Change", multiple: true, required: false, submitOnChange: true
-            input "specialSwitch", "capability.switch", title: "Special switch", multiple: false, required: false, submitOnChange: true         
-			if (specialSwitch) input "specialValue", "text", title: "", description:"Answer", required: true
-        }    
- 
-		section(title: "Sensor", hideable:true, hidden: hideSection("sensors")) {
-        	input "movement", "capability.motionSensor", title: "Movement sensor", multiple: true, required: false
-			input "contact", "capability.contactSensor", title: "Contact sensor", multiple: true, required: false
-    		input "presence", "capability.presenceSensor", title: "Presence sensor", multiple: true, required: false
-    		input "vibration", "capability.accelerationSensor", title: "Vibration sensor", multiple: true, required: false       
-	   		input "meter", "capability.powerMeter", title: "Power", multiple: true, required: false, submitOnChange: true 
-			if (meter) {
-				input "meterValue", "number",  title: "", description: "Threshold", required: true
-			}
-    		input "temp", "capability.temperatureMeasurement", title:  "Temperature Sensor", multiple: true, required:false, submitOnChange: true 
-   			if (temp) {
-    			input "tempValue", "number", title: "", description: "Target", required: false
-    		}
+    	if (!hideSection("switch") || !quickEdit) section("switch", hideable:true, hidden: hideSection("switch")) {
+            inpt([],"physical", "capability.switch","","Switch"); inpt(["physical"],"hardOn", "bool", "(hard push?)")
+    		inptSimp("dimRange", "capability.switch", "Dimmer"); inpt(["dimRange"],"dimAbove","number", "","Above");  inpt(["dimRange"],"dimBelow","number", "","Below") 
+            inptSimp("onColor", "capability.colorControl", "Color Change")
+            inptSimp("specialSwitch", "capability.switch", "Special switch"); inpt(["specialSwitch"],"specialAttribute", "text", "", "Attribute"); inpt(["specialSwitch"],"specialValue", "text", "", "Value")            
+            inptSimp("buttonPush", "capability.button", "Button(s)"); inpt(["buttonPush"],"buttonValue","text","","Button number");	inpt(["buttonPush"],"buttonHeld","bool", "Held?") 
+        }     
+		if (!hideSection("sensor") || !quickEdit) section(title: "Sensor", hideable:true, hidden: hideSection("sensors")) {
+        	inptSimp("movement", "capability.motionSensor", "Movement sensor")
+			inptSimp("contact", "capability.contactSensor", "Contact sensor")
+    		inptSimp("presence", "capability.presenceSensor", "Presence sensor")
+    		inptSimp("vibration", "capability.accelerationSensor", "Vibration sensor")     
+	   		inptSimp("meter", "capability.powerMeter", "Power"); inpt(["meter"],"meterValue","number","","Threshold")
+    		inptSimp("temp","capability.temperatureMeasurement","Temperature Sensor"); inpt(["temp"],"tempValue", "number", "", "Target")
         }
-		section(title: "Events", hideable:true, hidden: hideSection("events")) {       
-            input "modeChange", "mode", title: "Mode change", multiple: false, required: false 
-            
-            input "timer", "time", title: "Time", required: false
+		if (!hideSection("events") || !quickEdit) section(title: "Events", hideable:true, hidden: hideSection("events")) {       
+            inptSimp("modeChange", "mode", "Mode change")
+            inptSimp("timer", "time", "Time")
         }    
-
 	}        
+}    
+
+def inptSimp(String name, String type, String title = "") {	inpt([], name, type, title)	}   
+def inptAlt(ArrayList parent=[], Boolean inverted, String name, String type, String title = "", String desc = "", Boolean multiple=true) {
+	def parentPassed = false
+	parent.each { if (settings["$it"]) parentPassed = true }
+	if ((parentPassed && !inverted) || (!parentPassed && inverted)) inpt([], name, type, title, desc, multiple)
 }
 
-def inpt1(ArrayList parent=[], String name, String type, String title = "", String desc = "", String cap = "") {
-inpt(parent, name, type, title, desc, cap, true)
-	
- }   
 
-def inpt(ArrayList parent=[], String name, String type, String title = "", String desc = "", String cap = "", Boolean multiple=true) {
+def inpt(ArrayList parent=[], String name, String type, String title = "", String desc = "", Boolean multiple=true) {
 	
 	def parentPassed = true
     //log.trace "name $name title $title desc $desc parent $parent"
     parent.each { if (!settings["$it"]) parentPassed = false }
-    def temp = settings["$name"] 
-    if (type == "bool" || type == "text" || type == "number") multiple = false
+    if (type == "bool" || type == "text" || type == "number" || type == "time" || type == "mode" || type == "capability.button") multiple = false
 	if ((settings["$name"] || !quickEdit) && (!parent || parentPassed))
-	input name, type, title: title, description: desc, required: false, multiple: multiple, submitOnChange: true, capitalization: cap
+	input name, type, title: title, description: desc, required: false, multiple: multiple, submitOnChange: true
 }
 
-def inptEnum(ArrayList parent=[], String name, ArrayList opts, String title = "", String desc = "") {
+def inptEnum(ArrayList parent=[], String name, ArrayList opts, String title = "", String desc = "", Boolean required=false) {
     def parentPassed = true
     //log.trace "name $name title $title desc $desc parent $parent"
     parent.each { if (!settings["$it"]) parentPassed = false }
 	if ((settings["$name"] || !quickEdit) && (!parent || parentPassed))
-	input name, "enum", title: title, description: desc, options: opts, required: false, multiple: false, submitOnChange: true
+	input name, "enum", title: title, description: desc, options: opts, required: required, multiple: false, submitOnChange: true
 }
 
 
+
 def effectPage() {
-	dynamicPage(name: "effectPage", title: "Effects:", nextPage: "mainPage", uninstall: false) {
-    
-    	section() {
-        	input "quickEdit", "bool", title: "Quick Edit", submitOnChange: true
-        }
-    	section() {
-        	inpt([], "slave", "capability.switch", "Sync")
+	dynamicPage(name: "effectPage", title: "Effects:", nextPage: "mainPage", uninstall: false) {       
+    	 if (!hideSection("slave") || !quickEdit) section("Sync") {
+        	 inpt([], "slave", "capability.switch", "Sync")
              inpt(["slave"], "syncDim", "bool", "Dim?");  inpt(["slave", "syncDim"], "dimOnly", "bool", "(dim only?)") 
+             inpt(["slave"], "syncCol", "bool", "Color?");  inpt(["slave", "syncCol"], "colOnly", "bool", "(color only?)") 
              inpt(["slave"], "offCallback", "bool", "Callback (on off())?");  inpt(["slave","offCallback"], "offCallbackAny", "bool", "...even just one?")     		
 			 inpt([],"colorSlave", "capability.colorControl", "Colors?")            
 		}
-    
-		section("On", hideable:true, hidden: hideSection("on")) {    
-			inpt([], "virtualOn", "capability.switch", "", "On --> On()")
-   			inpt([], "flipOn", "capability.switch", "", "On --> Off()")
-    		inpt([], "mimicOn", "capability.switch", "On --> Mimic");	inpt1(["mimicOn"], "masterOn", "capability.switch",  "", "Master switch:")
+        
+        if (!hideSection("on") || !quickEdit) section("On", hideable:true, hidden: hideSection("on")) {    
+			inpt([], "virtualOn", "capability.switch", "On --> On()")
+   			inpt([], "flipOn", "capability.switch", "On --> Off()")
+    		inpt([], "mimicOn", "capability.switch", "On --> Mimic");	inpt(["mimicOn"], "masterOn", "capability.switch",  "", "Master switch:")
             
    			inpt([], "dimOn", "capability.switchLevel", "Set dimmer");  inpt(["dimOn"], "dimOnlyOn", "bool", "(dim only?)")
 			 inpt(["dimOn"], "dimValueOn", "text",  "", "Dim value:");  inpt(["dimOn"], "dimMasterOn", "capability.switchLevel",  "", "Dim master:")    
@@ -341,8 +353,8 @@ def effectPage() {
              inpt(["customOptionsOn"], "customOn", "$typeOn", "", "Device");	inpt(["customOptionsOn", "customOn"], "customCmdOn", "text", "Command", "none")	
              
 		}
-         
-		section("Off", hideable:true, hidden: hideSection("off")) {    
+        log.trace "${!hideSection("off")} || ${!quickEdit}"
+        if (!hideSection("off") || !quickEdit) section("Off", hideable:true, hidden: hideSection("off")) {    
 			inpt([], "virtualOff", "capability.switch", "", "Off --> Off()")
    			inpt([], "flipOff", "capability.switch", "", "Off --> On()")
     		inpt([], "mimicOff", "capability.switch", "Off --> Mimic");	inpt(["mimicOff"], "masterOff", "capability.switch",  "", "Master switch:")
@@ -369,7 +381,7 @@ def effectPage() {
              inpt(["customOptionsOff"], "customOff", "$typeOff", "", "Device");	inpt(["customOptionsOff", "customOff"], "customCmdOff", "text", "Command", "none")	
 		}
         
-        section("Delay") {
+        if (!hideSection("delay") || !quickEdit) section("Delay",hideable:true, hidden: hideSection("delay")) {
 			if (waitOnSecs == false) inpt([], "waitOn", "number", "Minutes:", "")
         	inpt([], "waitOnSecs", "bool", "Seconds")
             inpt(["waitOnSecs"], "waitSecs", "number", "", "")
@@ -380,18 +392,30 @@ def effectPage() {
 
 def limitPage() {
 	dynamicPage(name: "limitPage", title: "Limits:", nextPage: "mainPage", uninstall: false) {
-		section("Switch") {
+		if (!hideSection("limSwitch") || !quickEdit) section("Switch") {
             inpt([], "onGate", "capability.switch", "Only if one of these is ON:");	inpt([], "offGate", "capability.switch", "Only if ALL of these are OFF:")
         }
-		section("Sensors") {
+		if (!hideSection("limSensors") || !quickEdit) section("Sensors") {
             inpt([], "openContact", "capability.contactSensor", "Only if one of these is OPEN:"); inpt([], "closedContact", "capability.contactSensor", "Only if one of these is CLOSED:")  
             inpt([], "activeMotion", "capability.motionSensor", "Only if one of these is ACTIVE:"); inpt([], "inactiveMotion", "capability.motionSensor", "Only if one of these is INACTIVE:") 
             inpt([],  "presencePresent", "capability.presenceSensor", "Only if one of these is PRESENT:"); inpt([], "presenceNotPresent", "capability.presenceSensor", "Only if one of these is NOT PRESENT:") 
 		}
-		section("State") {     
+       
+		if (!hideSection("limState") || !quickEdit) section("State") {     
         	inpt([], "modes", "mode", "Only if in one of these MODES:")
             href(name:"toTimePage", page:"timePage", title: "Only if BETWEEN", description: timeFormat()) 
 		}
+        if (waitOnSecs || waitOn)
+        section("Kill") {
+            inptAlt(["killSensor"], true, "killSwitch", "capability.switch", "","Switch")	
+            inptAlt(["killSwitch"], true, "killSensor", "capability.sensor", "","Sensor")
+            if (settings["killSensor"] || settings["killSwitch"])
+            inptEnum([],"killVal", [["On":"On"],["Off":"Off"],["?":"Other"]], "", "Value",true)	           
+             
+            
+           // inptAlt(["killSwitch","killSensor"], false, "killVal", "text", "","Value")
+            
+        }
     }
 }
 
@@ -413,12 +437,12 @@ def timeFormat() {
 def defaultLabel() {
     def causes = []
     def effects = []
-    ["physical","specialSwitch","buttonSwitch","dimRange","onColor","movement","contact","presence","vibration","meter","temp"].each{ causeType ->
+    ["physical","specialSwitch","buttonPush","dimRange","onColor","movement","contact","presence","vibration","meter","temp"].each{ causeType ->
         if (settings["$causeType"]) causes << settings["$causeType"].join(", ")
     } 
     if (settings["modeChange"]) causes << settings["modeChange"]
     
-    ["slave","color","virtualOn","flipOn","mimicOn","dimOn","colorOn","virtualOff","flipOff","mimicOff","dimOff","colorOff"].each{ effectType ->
+    ["slave","colorSlave","virtualOn","flipOn","mimicOn","dimOn","colorOn","virtualOff","flipOff","mimicOff","dimOff","colorOff"].each{ effectType ->
     	//log.debug "list $effectType and ${settings["$effectType"]}"
         if (settings["$effectType"]) effects << settings["$effectType"].join(", ")
     }    
@@ -466,6 +490,7 @@ def colorValue(str) {
 def gateCheck(){
     def isMode = !modes || modes.contains(location.mode)   
     def between = ((fromTime) && (toTime)) ? timeOfDayIsBetween(fromTime, toTime, new Date(), location.timeZone) : true
+    def alive = (state.killed == "false")
     
 	def onGatePass=true, offGatePass=true, openGatePass=true, closedGatePass=true, activeGatePass=true, inactiveGatePass=true, presentGatePass=true, notPresentGatePass=true
 	if (onGate) { 		onGatePass = onGate?.any { it.currentValue('switch').contains("on") } }
@@ -476,23 +501,32 @@ def gateCheck(){
 	if (inactiveMotion) {	inactiveGatePass = !(inactiveMotion?.any { (it.currentValue('motion') == "active") }) }    
 	if (presencePresent) {	presentGatePass = !(presencePresent?.any { (it.currentValue('presence') == "not present") }) }    
 	if (presenceNotPresent) {	notPresentGatePass = !(presenceNotPresent?.any { (it.currentValue('presence') == "present") }) }    
-    
-    log.trace  "onGatePass $onGatePass && offGatePass $offGatePass && openGatePass $openGatePass && closedGatePass $closedGatePass" +
-    			"&& activeGatePass $activeGatePass && inactiveGatePass $inactiveGatePass && presentGatePass $presentGatePass && notPresentGatePass $notPresentGatePass " +
-            	"|| isMode $isMode && between $between"
-    return onGatePass && offGatePass && 
+   
+   def ret = onGatePass && offGatePass && 
     	openGatePass && closedGatePass && 
         activeGatePass && inactiveGatePass &&
         presentGatePass && notPresentGatePass &&
-        isMode && between
+        isMode && between && alive
+    log.trace  "onGatePass $onGatePass && offGatePass $offGatePass && openGatePass $openGatePass && closedGatePass $closedGatePass" +
+    			"&& activeGatePass $activeGatePass && inactiveGatePass $inactiveGatePass && presentGatePass $presentGatePass && notPresentGatePass $notPresentGatePass " +
+            	"|| isMode $isMode && between $between && alive $alive \n $ret"
+    return ret
+}
+
+def killHandler(evt) {
+	log.trace "Killing: ${(settings["killVal"] == cleanEvt(evt.value))}" 
+	if (settings["killVal"] == cleanEvt(evt.value)) state.killed = "true"
 }
 
 def handler(evt) {
-	def secs = waitOnSecs ? waitSecs : (waitOn ? waitOn*60 : 0)
-	//def secs = waitOn ? waitOn*60 : 0
+	run([value:evt.value, name:evt.name, type:evt.type, displayName:evt.displayName,stringValue:evt.stringValue])
+}
 
+def run(evt) {
+	log.trace "RUN: $evt.value"
+	state.killed = "false"
     if (gateCheck())
-    	runIn(secs, runStuff, [data:[value:evt.value, name:evt.name, type:evt.type, displayName:evt.displayName,stringValue:evt.stringValue]])
+    	runIn((waitOnSecs ? waitSecs : (waitOn ? waitOn*60 : 0)), runStuff, [overwrite: true, data:[value:evt.value, name:evt.name, type:evt.type, displayName:evt.displayName,stringValue:evt.stringValue]])
 }
 
 
@@ -501,7 +535,7 @@ def timeHandler() {
 }
 
 def runStuff(evt) { 
-	log.debug "$evt.value"
+	log.trace "RUN STUFF: $evt.value"
 	if (gateCheck()) {
 
 	def val = evt.value
@@ -523,10 +557,19 @@ def runStuff(evt) {
       	log.debug "${dims*.currentValue('switch')}"
     }  
     
-    if (cat == "color" && colorSlave && onColor) {
+    if (cat == "color" || cat == "colorTemperature") {
+    	def colorSlave = colorSlave; def colorMaster = onColor
+        if (syncCol) {
+        	colorSlave = slave; colorMaster = physical
+        }
+        log.trace "slave = $colorSlave"
+    
+    log.trace "NOW slave = $colorSlave"
+        
+    if (cat == "color" && colorSlave && colorMaster) {
     	log.debug "going: color sync"
-        def hueColor = onColor.latestValue("hue")[0]
-        def saturation = onColor.latestValue("saturation")[0]
+        def hueColor = colorMaster.latestValue("hue")[0]
+        def saturation = colorMaster.latestValue("saturation")[0]
         
         colorSlave.each() {      
         	
@@ -540,60 +583,57 @@ def runStuff(evt) {
         }
 	}
     
-    if (cat == "colorTemperature" && colorSlave && onColor) {  
+    if (cat == "colorTemperature" && colorSlave && colorMaster) {  
    		log.debug "going: colorTemp sync"
         def colorTemp = 3500	
-        if (onColor.hasAttribute("colorTemperature")) colorTemp = onColor.latestValue("colorTemperature")[0] ?: 3500 
+        if (colorMaster.hasAttribute("colorTemperature")) colorTemp = colorMaster.latestValue("colorTemperature")[0] ?: 3500 
  		colorSlave.each() {          	
 			if (it.hasCommand("setColorTemperature")) if (it.currentValue("colorTemperature") != colorTemp)
                	it.setColorTemperature(colorTemp) 
         }        
     }
+    }
 	// 			SYNC BLOCK		//  
     
+    def special = settings["specialAttribute"] ?: "status"    
     if (cat == "switch") {cat = (!hardOn || typ == "physical") ? "OnOff" : "ignore"}
-    if (cat == "status") val = (specialValue == val) ? "On" : "ignore"
-
+    if (cat == special) val = (specialValue == val) ? "On" : "ignore"
     if (cat == "mode") val = (val==modeChange) ? "On" : "Off"  
-
+    if (cat == "button") {
+		val = getButtonVal(evt.value, evt.data)
+        log.debug "button hit: $val"                      
+    	val = (buttonValue == val && (!buttonHeld ^ evt.value.contains("held")))  ? "On" : "Off"  
+    }      
     if (cat == "level" && dimRange) {
     	def valInt = val as Integer
         desc = valInt as String
         val = ((valInt >= dimAbove || !dimAbove) && (valInt <= dimBelow || !dimBelow)) ? "On" : "Off" 
         cat = "OnOff"
-    }
-       
+    }       
     if (cat == "color" && onColor) {
     	val = "On"
         cat = "OnOff"
-    }
-    
-   
+    }       
     if (cat == "power") {
     	def valInt = val as Integer
         desc = valInt as String
 		val = (meterValue > valInt)  ? "Off" : "On"  
     }
-
     if (cat == "temperature") {
     	def valInt = val as Integer //Math.round(val)//evt.numericValue)
         desc = valInt as String
-        if (!tempValue) val = "On" else
-		val = (tempValue > valInt)  ? "Off" : "On"  
-    }
+        //if (!tempValue) val = "On" else
+        //val = (tempValue > valInt)  ? "Off" : "On"  
+        val = (!tempValue) ? "On" : (tempValue > valInt)  ? "Off" : "On"
+    }    
+    cat = (["motion","contact","presence","acceleration","power",special,"mode", "temperature"].contains(cat)) ? "OnOff" : cat 
+    val = cleanEvt(val)
     
-    cat = (["motion","contact","presence","acceleration","power","status","mode", "temperature"].contains(cat)) ? "OnOff" : cat
-     
-    val = (["active", "open", "present","time"].contains(val)) ? "on" : val 
-    val = (["inactive", "closed", "not present"].contains(val)) ? "off" : val 
-  
-    if (val=="on") val="On"
-    if (val=="off") val="Off"    
 
 	log.trace "Formated as: ${cat} is calling ${val}" 
     
     if (cat == "OnOff" && ["On","Off"].contains(val)) {    
-   		if (slave && !dimOnly) {if (val=="On") {slave*.on()} else {slave*.off()}}
+   		if (slave && !dimOnly && !colOnly) {if (val=="On") {slave*.on()} else {slave*.off()}}
   
 	    def switches = settings["virtual$val"]
     	def flips = settings["flip$val"]
@@ -621,7 +661,7 @@ def runStuff(evt) {
                         if ((curDim + newDim) < 0) newDim = 0
                         log.debug "dimVals $dimVals = newDim $newDim + curDim $curDim and ${dimVals.contains("-")} or ${dimVals.contains("+")}"
 						dimVals = curDim + newDim
-                        log.trace "setlevel $dimVals"
+                        //log.trace "setlevel $dimVals"
                     }   
                     it.setLevel(dimVals)                    
                 }
@@ -753,3 +793,67 @@ def callbackHandler(evt) {
 		if (allOff || offCallbackAny) physical*.off()
 	}
 }
+
+
+private getButtonVal(value, data) {
+	log.debug "getButtonVal( $value, $data )"
+  	def val = "0"
+    def test = value?.find(/\d+/) { match -> return "$match"}
+    log.debug "PRESENTING: $test"
+    switch(value) {
+		case ~/.*10.*/:
+			val = "10"
+			break
+		case ~/.*11.*/:
+			val = "11"
+			break		
+        case ~/.*12.*/:
+			val = "12"
+			break
+		case ~/.*1.*/:
+			val = "1"
+			break
+		case ~/.*2.*/:
+			val = "2"
+               break
+		case ~/.*3.*/:
+			val = "3"
+			break
+		case ~/.*4.*/:
+			val = "4"
+			break
+		case ~/.*5.*/:
+			val = "5"
+			break   
+		case ~/.*6.*/:
+			val = "6"
+			break                
+	}
+    if (val == "0") switch(data) {
+		case ~/.*1.*/:
+			val = "1"
+			break
+		case ~/.*2.*/:
+			val = "2"
+			break
+		case ~/.*3.*/:
+			val = "3"
+			break
+		case ~/.*4.*/:
+			val = "4"
+			break
+		case ~/.*5.*/:
+			val = "5"
+			break
+		case ~/.*6.*/:
+			val = "6"
+			break                
+	}
+    return val
+}
+
+private cleanEvt(val) {
+    return (["active", "open", "present","time","on"].contains(val)) ? "On" : ((["inactive", "closed", "not present","off"].contains(val)) ? "Off" : val) 
+    if (val=="on") val="On"
+    if (val=="off") val="Off"     
+ }
