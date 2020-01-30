@@ -142,36 +142,20 @@ metadata {
 	}
 
 	tiles(scale: 2) {
-        multiAttributeTile(name: "preview", type: "generic", width: 6, height: 4) {//generic
-        
-      		
-            //tileAttribute("device.volShow", key: "SECONDARY_CONTROL", wordWrap: true) { 
-           	//	attributeState "default", icon:"st.custom.sonos.unmuted", label:'${currentValue} \n'
-            //    attributeState "hidden", icon:" ", label:''
-            //    attributeState "true", icon:"st.custom.sonos.muted", label:''
-           // }
+        multiAttributeTile(name: "preview", type: "generic", width: 6, height: 4) {
            	tileAttribute("device.chShow", key: "MARQUEE") { 
             	attributeState "default", label:'${currentValue}'//, action: "volMode"
                 attributeState "hidden", icon:" ", label:''
             }                        
             
-           	//tileAttribute("device.dispDetails", key: "SECONDARY_CONTROL") { 
-           // 	attributeState "default", icon:" ",label:'\n${currentValue} '
-           //     attributeState "hidden", icon:" ", label:''
-		//	}
-           	//tileAttribute("dummy", key: "SECONDARY_CONTROL", wordWrap: true) { 
-            //	attributeState "default", icon:" ", label:'                                                          '//, action: "on"
-            //}            
+        
           
 
             tileAttribute ("device.changed", key: "PRIMARY_CONTROL", wordWrap: true) {
-			//	attributeState "off", label:'${name}', backgroundColor:"#ffffff",
-           	//		nextState:"off"
+
            		attributeState("chsmart", icon: "st.Electronics.electronics18",label: '', action: "playPause", nextState: "pause", backgroundColor: "#41F073")
            		attributeState("chcast", icon:"st.Electronics.electronics8", label: 'Cast', action: "playPause", nextState: "pause", backgroundColor: "#41F073")
            		attributeState("pause", icon:"st.custom.buttons.play-pause", label: '', action: "", nextState: "updating", backgroundColor: "#41F073")
-//           		attributeState("chcast", icon:"st.Electronics.electronics8", label: 'Cast', action: "pause", nextState: "updating", backgroundColor: "#41F073")
-
 
             	attributeState("off", icon:"st.Electronics.electronics15", label: 'Off', action: "on", nextState: "on", backgroundColor: "#ffffff")
             	attributeState("updating", icon:"Refresh.refresh", label: ' ',  backgroundColor: "#41F073")
@@ -226,23 +210,15 @@ metadata {
             state "Settings", label:' ', icon:"st.nest.empty", action:""
             state "default", label:'Home', icon:"st.nest.nest-home", action:"goHome"
         }     
-        //valueTile("exit", "device.status", height: 1, width: 1, inactiveLabel:false, decoration:"flat") {
-        //    state "default", label:'Exit', icon: "", action:"goExit"
-        //}             
+            
         standardTile("ok", "device.status", height: 2, width: 2, inactiveLabel:false, decoration:"flat") {
             state "default", label:'OK', icon: "st.samsung.da.REF_2line_freezer", action:"goOK"
         }        
         
         standardTile("input", "device.dispMain", height: 1, width: 1, inactiveLabel:false, decoration:"flat") {
-           // state "Settings", label:' ', icon:"st.nest.empty", action:""
-            state "Input", label:' ', icon:"st.nest.empty", action:""
-            state "Netflix", label:' ', icon:"st.nest.empty", action:""
-           // state "Hulu", label:' ', icon:"st.nest.empty", action:""
-           // state "Smart", label:' ', icon:"st.nest.empty", action:""
-            
-            //state "Input", label:'Exit', icon: "st.unknown.zwave.static-controller", action:"goExit", nextState: "Smart" 
+             state "Input", label:' ', icon:"st.nest.empty", action:""
+            state "Netflix", label:' ', icon:"st.nest.empty", action:""           
             state "default", label:'Input', icon: "st.Electronics.electronics4", action:"goInput", nextState: "Input"
-            //state "default", label:'', icon: "st.quirky.egg-minder.quirky-egg-report", action:"goChList", nextState: "true"
         }     
         
         standardTile("simp", "device.dispMain", height: 1, width: 1, inactiveLabel:false, decoration:"flat") {
