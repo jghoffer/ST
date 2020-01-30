@@ -101,8 +101,9 @@ metadata {
             
             attributeState("cooling", backgroundColor:"#74c2e6") //64bae3
     		attributeState("Cooling", backgroundColor:"#2082b1") //238fc1
-            attributeState("Waiting for A/C", backgroundColor:"#b5def2")
-  		}
+         //   attributeState("Waiting for A/C", backgroundColor:"#b5def2")
+            attributeState("default", label: '${name}', backgroundColor:"#b5def2")  		
+ }
   		tileAttribute("device.thermostatMode", key: "THERMOSTAT_MODE") {
     		attributeState("off", label:'${name}')
     		attributeState("heat", label:'Heater')
@@ -149,7 +150,7 @@ metadata {
             //state "auto", label:'${name}', action:"thermostat.off"//, icon: "st.Weather.weather3", backgroundColor: '#44b621'
         }
         standardTile("thermostatFanMode", "device.thermostatFanMode", width: 2, height: 2, inactiveLabel: false) {
-            state "auto", label:'${name}', action:"faOn", icon: "st.Appliances.appliances11", backgroundColor: '#44b621'
+            state "auto", label:'${name}', action:"fanOn", icon: "st.Appliances.appliances11", backgroundColor: '#44b621'
             state "circulate", label:'${name}', action:"fanAuto", icon: "st.Appliances.appliances11", backgroundColor: '#44b621'
             state "on", label:'${name}', action:"fanAuto", icon: "st.Appliances.appliances11", backgroundColor: '#44b621'
         }
@@ -746,7 +747,7 @@ def getStatus() {
         
 		//log.trace "(switchPos == cool : ${(switchPos == 'cool')} && operatingState == Idle : ${(operatingState == "Idle")} && finalCoolSetPoint < finalTemp : ${(finalCoolSetPoint < finalTemp)})" 
 		if ((switchPos == 'cool') && (operatingState == "Idle")) {
-        	if (finalCoolSetPoint < finalTemp) operatingState = "Waiting for A/C" 
+        	if (finalCoolSetPoint < finalTemp) operatingState = "Waiting to Cool to ${finalCoolSetPoint}°" 
     		else operatingState = "cooling" 
 		}
 		if ((switchPos == 'heat') && (operatingState == "Idle")) {

@@ -28,45 +28,47 @@ metadata {
         attribute "BedroomHallMotion", "STRING"        
         attribute "KitchenFrontMotion", "STRING"
         attribute "KitchenStoveMotion", "STRING"
-        attribute "BedroomMotion", "STRING"       
+        attribute "KitchenBarMotion", "STRING"
+        attribute "DenDeskMotion", "STRING"
+        attribute "DenDiplomaMotion", "STRING"
+        attribute "GuestBathMotion", "STRING"
+        attribute "GuestBathShowerMotion", "STRING"
+        attribute "BedBathMotion", "STRING"        
+        attribute "BedBathShowerMotion", "STRING" 
+        attribute "BedLMotion", "STRING" 
+        attribute "BedRMotion", "STRING"
+        attribute "BedroomMotion", "STRING"  
+        attribute "BedroomExtraMotion", "STRING"
+        
         attribute "FrontContact", "STRING"
         attribute "BedroomContact", "STRING" 
         attribute "EntryClosetContact", "STRING" 
         attribute "DenContact", "STRING"
         attribute "HallClosetContact", "STRING"
         attribute "BedroomClosetContact", "STRING"
-        attribute "LaundryContact", "STRING"
-        
+        attribute "LaundryContact", "STRING" 
         attribute "DenClosetContact", "STRING"
         attribute "DenContact", "STRING"
-        attribute "DenDeskMotion", "STRING"
-        attribute "DenDiplomaMotion", "STRING"
         attribute "GuestBathContact", "STRING"
-        attribute "GuestBathMotion", "STRING"
-        attribute "GuestBathShowerMotion", "STRING"
         attribute "BedBathContact", "STRING"
         attribute "HVACContact", "STRING"
-        attribute "BedBathMotion", "STRING"        
-        attribute "BedBathShowerMotion", "STRING" 
 
-
-        attribute "BedTemperature", "STRING"
+        attribute "BedroomTemperature", "STRING"
         attribute "BedBathShowerTemperature", "STRING"
         attribute "GuestBathShowerTemperature", "STRING"
-        attribute "DenDiplomaTemperature", "STRING"
+        attribute "DenTemperature", "STRING"
         attribute "KitchenStoveTemperature", "STRING" 
         attribute "LivingRoomCouchTemperature", "STRING"
         attribute "DryerTemperature", "STRING"
         attribute "emperatureTemperature", "STRING"
-        
-        attribute "BedMotion", "STRING"  
+       
 
         command "activity", ["STRING"]
         
 	}
 
 	tiles(scale: 2) {
-		standardTile("status", "device.status", width: 6, height: 6, canChangeIcon: false) {
+		standardTile("status", "device.status", width: 6, height: 6, canChangeIcon: true) {
 			state "status", label: '', backgroundColor: "#1e50bb" 
          
         }
@@ -159,6 +161,14 @@ metadata {
             state "10", label:'', icon:"https://raw.githubusercontent.com/jghoffer/STicons/master/green-10.png"
 			state "on", label: '', icon: "http://html-color.org/99B8FF.jpg"
 		}
+        standardTile("KitchenBar", "device.KitchenBarMotion", width: 1, height: 1) {
+			state "off", label: '', icon: "http://html-color.org/B8DEC0.jpg"
+            state "0", label:'', icon:"https://raw.githubusercontent.com/jghoffer/STicons/master/green-0.png"
+            state "2", label:'', icon:"https://raw.githubusercontent.com/jghoffer/STicons/master/green-2.png"
+            state "7", label:'', icon:"https://raw.githubusercontent.com/jghoffer/STicons/master/green-7.png"
+            state "10", label:'', icon:"https://raw.githubusercontent.com/jghoffer/STicons/master/green-10.png"
+			state "on", label: '', icon: "http://html-color.org/99B8FF.jpg"
+		}        
         standardTile("BedBathMotion", "device.BedBathMotion", width: 1, height: 1) {
 			state "off", label: '', icon: "http://html-color.org/DCBADB.jpg"
             state "0", label:'', icon:"https://raw.githubusercontent.com/jghoffer/STicons/master/pink-0.png"
@@ -183,6 +193,7 @@ metadata {
             state "10", label:'', icon:"https://raw.githubusercontent.com/jghoffer/STicons/master/pink-10.png"
 			state "on", label: '', icon: "http://html-color.org/99B8FF.jpg"
 		}
+        
         standardTile("BedroomMotion", "device.BedroomMotion", width: 1, height: 1) {        
 			state "off", label: '', icon: "http://html-color.org/E2BFAC.jpg"
             state "0", label:'', icon:"https://raw.githubusercontent.com/jghoffer/STicons/master/brown-0.png"
@@ -191,15 +202,31 @@ metadata {
             state "10", label:'', icon:"https://raw.githubusercontent.com/jghoffer/STicons/master/brown-10.png"
 			state "on", label: '', icon: "http://html-color.org/99B8FF.jpg"
         }
-        
-        standardTile("BedroomSpecial", "device.BedMotion", width: 1, height: 1) {
+        standardTile("BedroomMotion2", "device.BedroomExtraMotion", width: 1, height: 1) {        
 			state "off", label: '', icon: "http://html-color.org/E2BFAC.jpg"
             state "0", label:'', icon:"https://raw.githubusercontent.com/jghoffer/STicons/master/brown-0.png"
             state "2", label:'', icon:"https://raw.githubusercontent.com/jghoffer/STicons/master/brown-2.png"
             state "7", label:'', icon:"https://raw.githubusercontent.com/jghoffer/STicons/master/brown-7.png"
             state "10", label:'', icon:"https://raw.githubusercontent.com/jghoffer/STicons/master/brown-10.png"
 			state "on", label: '', icon: "http://html-color.org/99B8FF.jpg"
+        }
+        
+        standardTile("BedL", "device.BedLMotion", width: 1, height: 1) {
+			state "off", label: '', icon: "http://html-color.org/E2BFAC.jpg"
+            state "0", label:'', icon:"https://raw.githubusercontent.com/jghoffer/STicons/master/brown-0R.png"
+            state "2", label:'', icon:"https://raw.githubusercontent.com/jghoffer/STicons/master/brown-2R.png"
+            state "7", label:'', icon:"https://raw.githubusercontent.com/jghoffer/STicons/master/brown-7R.png"
+            state "10", label:'', icon:"https://raw.githubusercontent.com/jghoffer/STicons/master/brown-10R.png"
+			state "on", label: '', icon: "http://html-color.org/E51248.jpg"
         }        
+        standardTile("BedR", "device.BedRMotion", width: 1, height: 1) {
+			state "off", label: '', icon: "http://html-color.org/E2BFAC.jpg"
+            state "0", label:'', icon:"https://raw.githubusercontent.com/jghoffer/STicons/master/brown-0R.png"
+            state "2", label:'', icon:"https://raw.githubusercontent.com/jghoffer/STicons/master/brown-2R.png"
+            state "7", label:'', icon:"https://raw.githubusercontent.com/jghoffer/STicons/master/brown-7R.png"
+            state "10", label:'', icon:"https://raw.githubusercontent.com/jghoffer/STicons/master/brown-10R.png"
+			state "on", label: '', icon: "http://html-color.org/E51248.jpg"
+        } 
         
         standardTile("FrontDoor", "device.FrontContact", inactiveLabel: true, width: 1, height: 1, decoration: "flat") {
 		  state "closed", label:'${currentValue}', action:"${name}", icon:"https://raw.githubusercontent.com/jghoffer/STicons/master/white-closed-green.png"
@@ -270,7 +297,7 @@ metadata {
 				]
 		}
         
-        valueTile("BedTemp", "device.BedTemperature", inactiveLabel: false, width: 1, height: 1) {
+        valueTile("BedTemp", "device.BedroomTemperature", inactiveLabel: false, width: 1, height: 1) {
 			state "temperature", label:'${currentValue}\n',icon:"https://raw.githubusercontent.com/jghoffer/STicons/master/brown-hole.png",
 				backgroundColors:[
 					[value: 50, color: "#153591"],
@@ -329,7 +356,7 @@ metadata {
 					[value: 75, color: "#d04e00"]
 				]
 		}
-        valueTile("DenTemp", "device.DenDiplomaTemperature", inactiveLabel: false, width: 1, height: 1) {
+        valueTile("DenTemp", "device.DenTemperature", inactiveLabel: false, width: 1, height: 1) {
 			state "temperature", label:'${currentValue}\n',icon:"https://raw.githubusercontent.com/jghoffer/STicons/master/yellow-hole.png",
 				backgroundColors:[
 					[value: 50, color: "#153591"],
@@ -394,20 +421,21 @@ metadata {
         
         main "status"
 		details([
-  "DenMotion2",		"DenMotion",	 	"Temp",	"FrontDoor",		"dummy",				"dummy",
-  "DenMotion2", 	"DenMotion",	 	"DenContact",	"EntryMotion", 		"GuestBathContact",	"GuestBathMotion",
-  "DenTemp",		"DenCloset",		"HVACContact",	"HallwayMotion",	"GuestBathTemp",	"GuestShower",
-  "BedShower",		"BedBathTemp", 		"Laundry",		"HallwayMotion",	"EntryCloset",		"KitchenTemp",
-  "BedBathMotion",	"BedBathContact",	"BedContact",	"HallwayMotion",	"KitchenFront",		"KitchenBack",
-  "BedCloset",		"BedroomMotion",	"BedHall",		"LivingRoomT",		"LivingRoomT",		"LivingRoomC",
-  "BedroomSpecial",	"BedroomMotion",	"BedHall",		"LivingRoomD",		"LivingRoomT",		"LivingRoomC",
-  "BedroomMotion",	"BedroomMotion",	"BedTemp",		"LivingRoomD",		"LivingRoomD",		"LivingTemp"
+  "DenMotion",		"DenMotion",	 	"DenTemp",			"FrontDoor",		"dummy",			"GuestBathTemp",
+  "DenMotion", 	    "DenMotion",	 	"DenContact",		"EntryMotion", 		"GuestBathContact",	"GuestBathMotion",
+  "BedShower",		"DenCloset",		"Laundry",			"HallwayMotion",	"EntryCloset",	    "GuestShower",
+  "BedBathMotion",	"BedBathContact", 	"BedContact",	    "HallwayMotion",	"KitchenFront",		"KitchenBack",
+  "BedBathTemp",    "BedCloset",    	"BedHall",		    "HallwayMotion",	"KitchenBar",	    "KitchenTemp",
+  "BedroomMotion",	"BedroomMotion",	"BedHall",			"LivingRoomT",		"LivingRoomT",		"LivingRoomT",
+  "BedR",			"BedroomMotion",	"BedTemp",	        "LivingTemp",		"LivingRoomC",		"LivingRoomC",
+  "BedL",			"BedroomMotion2",	"BedroomMotion2",	"LivingRoomC",		"LivingRoomC",		"LivingRoomC"
               
             ])
 	}
 }
 
 def parse(String description) {
+    log.trace description
 	def pair = description.split(":")
 	createEvent(name: pair[0].trim(), value: pair[1].trim())
 }
@@ -439,7 +467,7 @@ def activity(val) {
             	if (s < 15) v = "10" else
          	   	v = "off"
         	}    
-            log.trace "$k is $s"          
+           // log.trace "$k is $s"          
             sendEvent(name: "$k", value: "$v", canBeCurrentState:false, displayed: false, isStateChange: true)  
         }
     }
