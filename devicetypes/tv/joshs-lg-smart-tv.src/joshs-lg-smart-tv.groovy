@@ -1,18 +1,5 @@
-/**
- *  LG Smart TV Device Type
- *
- *  Copyright 2015 ME ME ME
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
- *  in compliance with the License. You may obtain a copy of the License at:
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
- *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
- *  for the specific language governing permissions and limitations under the License.
- *
- */
+/** LG Smart TV Device Type  */
+ 
 metadata {
 	definition (name: "Josh's LG Smart TV", namespace: "tv", author: "Josh") 
     {
@@ -30,12 +17,8 @@ metadata {
         attribute "dispDetails", "string"
         attribute "working", "string"
         attribute "changed", "string"
-        attribute "volShow", "string"
-        attribute "chShow", "string"
-        attribute "showMode", "number"
         attribute "shift", "string"
         attribute "playing", "string"
-        attribute "debug", "string"
         
         command "setStatus", ["string"] 
         command "valueInc", ["number"]
@@ -44,9 +27,6 @@ metadata {
         command "refresh"
         command "chMode"
         command "volMode"
-        command "main"
-        command "lock"
-        command "unlock"
         command "mute"
         command "getVolume"
         command "getChannel"
@@ -81,7 +61,6 @@ metadata {
         command "goMenu"
         command "goChList"
         command "toggleShift"
-        command "goReset"
         
         command "go1"
         command "go2"
@@ -95,7 +74,7 @@ metadata {
         command "go0"
         command "goDash"
                 
-        command "debug"
+        command "goDebug"
         command "rwd"
         command "fwd"
         command "resetPointer"
@@ -148,55 +127,21 @@ metadata {
                 attributeState "hidden", icon:" ", label:''
             }                        
             
-        
-          
-
             tileAttribute ("device.changed", key: "PRIMARY_CONTROL", wordWrap: true) {
-
-           		attributeState("chsmart", icon: "st.Electronics.electronics18",label: '', action: "playPause", nextState: "pause", backgroundColor: "#41F073")
-           		attributeState("chcast", icon:"st.Electronics.electronics8", label: 'Cast', action: "playPause", nextState: "pause", backgroundColor: "#41F073")
-           		attributeState("pause", icon:"st.custom.buttons.play-pause", label: '', action: "", nextState: "updating", backgroundColor: "#41F073")
-
-            	attributeState("off", icon:"st.Electronics.electronics15", label: 'Off', action: "on", nextState: "on", backgroundColor: "#ffffff")
-            	attributeState("updating", icon:"Refresh.refresh", label: ' ',  backgroundColor: "#41F073")
-
-				attributeState("ch2", icon:"st.Electronics.electronics15", label: '2', action: "update", nextState: "updating", backgroundColor: "#41F073")
-                attributeState("ch4", icon:"st.Electronics.electronics15", label: '4', action: "update", nextState: "updating",backgroundColor: "#41F073")
-                attributeState("ch5", icon:"st.Electronics.electronics15", label: '5', action: "update", nextState: "updating",backgroundColor: "#41F073")
-                attributeState("ch7", icon:"st.Electronics.electronics15", label: '7', action: "update", nextState: "updating",backgroundColor: "#41F073")
-                attributeState("ch9", icon:"st.Electronics.electronics15", label: '9', action: "update", nextState: "updating",backgroundColor: "#41F073")
-                attributeState("ch11", icon:"st.Electronics.electronics15", label: '11', action: "update", nextState: "updating",backgroundColor: "#41F073")
-                attributeState("ch16", icon:"st.Electronics.electronics15", label: '16', action: "update", nextState: "updating",backgroundColor: "#41F073")
-                attributeState("ch20", icon:"st.Electronics.electronics15", label: '20',action: "update", nextState: "updating", backgroundColor: "#41F073")
-                attributeState("ch22", icon:"st.Electronics.electronics15", label: '22',action: "update", nextState: "updating", backgroundColor: "#41F073")
-                attributeState("ch24", icon:"st.Electronics.electronics15", label: '24',action: "update", nextState: "updating", backgroundColor: "#41F073")
-                attributeState("ch25", icon:"st.Electronics.electronics15", label: '25',action: "update", nextState: "updating", backgroundColor: "#41F073")
-                attributeState("ch26", icon:"st.Electronics.electronics15", label: '26',action: "update", nextState: "updating", backgroundColor: "#41F073")
-                attributeState("ch30", icon:"st.Electronics.electronics15", label: '30',action: "update", nextState: "updating", backgroundColor: "#41F073")
-                attributeState("ch32", icon:"st.Electronics.electronics15", label: '32', action: "update", nextState: "updating",backgroundColor: "#41F073")
-                attributeState("ch33", icon:"st.Electronics.electronics15", label: '33',action: "update", nextState: "updating", backgroundColor: "#41F073")
-                attributeState("ch36", icon:"st.Electronics.electronics15", label: '36', action: "update", nextState: "updating",backgroundColor: "#41F073")
-                attributeState("ch40", icon:"st.Electronics.electronics15", label: '40', action: "update", nextState: "updating",backgroundColor: "#41F073")
-                attributeState("ch48", icon:"st.Electronics.electronics15", label: '48', action: "update", nextState: "updating",backgroundColor: "#41F073")
-				attributeState("ch50", icon:"st.Electronics.electronics15", label: '50',action: "update", nextState: "updating", backgroundColor: "#41F073")               
-				attributeState("chChange", icon:"st.Electronics.electronics15", label: '', nextState: "volChange", backgroundColor: "#41F073")
-				attributeState("chDown", icon:"st.Electronics.electronics15", label: '-', nextState: "volChange", backgroundColor: "#41F073")
-				attributeState("chUp", icon:"st.Electronics.electronics15", label:"+", nextState: "volChange", backgroundColor: "#41F073")
-				attributeState "volChange", icon:'st.custom.sonos.unmuted', label:'', backgroundColor:"#90EBE9", nextState:"chChange"		
+           	    attributeState("off", icon:"st.Electronics.electronics15", label: 'Off',/* action: "on", */nextState: "on", backgroundColor: "#ffffff")
 				attributeState "volUp", icon:"st.custom.sonos.unmuted", label:'+', backgroundColor:"#90EBE9", nextState:"chChange"		
-				attributeState "volDown", icon:"st.custom.sonos.unmuted", label:'-', backgroundColor:"#90EBE9", nextState:"chChange"		
-                attributeState("volNum", icon:"st.custom.sonos.unmuted", label: '${currentValue}', action: "mute", nextState: "volChange", backgroundColor: "#90EBE9", defaultState: true)
-                attributeState("true", icon:"st.custom.sonos.muted", label: '', action: "mute", nextState: "volChange", backgroundColor: "#90EBE9", defaultState: true)
-                
+				attributeState "volDown", icon:"st.custom.sonos.unmuted", label:'-', backgroundColor:"#90EBE9", nextState:"chChange"	
+                attributeState "volChange", icon:'st.custom.sonos.unmuted', label:'', backgroundColor:"#90EBE9", nextState:"volNum"
+                attributeState("true", icon:"st.custom.sonos.muted", label: '', nextState: "volChange", backgroundColor: "#90EBE9")
+                attributeState("volNum", icon:"st.custom.sonos.unmuted", label: '${currentValue}', nextState: "volChange", backgroundColor: "#90EBE9", defaultState: true)                
 			}
                 
             tileAttribute("control", key: "VALUE_CONTROL") {
                 attributeState "default", action:"valueInc"
          	}       
-                    tileAttribute ("device.showMode", key: "SLIDER_CONTROL") {
-            attributeState("showMode", action:"toggleMode")
-        }
- 
+             tileAttribute ("device.showMode", key: "SLIDER_CONTROL") {
+            	attributeState("showMode", action:"toggleMode")
+        	}
         }  
         standardTile("power", "device.switch", height: 2, width: 2, inactiveLabel:false, icon:"st.switches.switch.on") {
     		state "on", label: 'On',backgroundColor: "#41F073", action: "off"
@@ -216,7 +161,7 @@ metadata {
         }        
         
         standardTile("input", "device.dispMain", height: 1, width: 1, inactiveLabel:false, decoration:"flat") {
-             state "Input", label:' ', icon:"st.nest.empty", action:""
+            state "Input", label:' ', icon:"st.nest.empty", action:""
             state "Netflix", label:' ', icon:"st.nest.empty", action:""           
             state "default", label:'Input', icon: "st.Electronics.electronics4", action:"goInput", nextState: "Input"
         }     
@@ -224,18 +169,14 @@ metadata {
         standardTile("simp", "device.dispMain", height: 1, width: 1, inactiveLabel:false, decoration:"flat") {
             state "Smart", label:'Exit', icon: "st.unknown.zwave.static-controller", action:"goExit", nextState: "Smart"
             state "Netflix", label:'Exit', icon: "st.unknown.zwave.static-controller", action:"goExit", nextState: "Smart"
-          //  state "Hulu", label:'Exit', icon: "st.unknown.zwave.static-controller", action:"goExit", nextState: "Smart"
             state "Input", label:'Exit', icon: "st.unknown.zwave.static-controller", action:"goExit", nextState: "Smart" 
             state "Settings", label:'Exit', icon: "st.unknown.zwave.static-controller", action:"goExit", nextState: "Smart"
             state "Home", label:'Exit', icon: "st.unknown.zwave.static-controller", action:"goExit", nextState: "Smart" 
-            
-           // state "GoogleCast", label:'TV', icon: "st.Electronics.electronics15", action:"goTV", nextState: "default"
-			state "default", label:'Cast', icon: "st.Electronics.electronics8", action:"goCast", nextState: "GoogleCast"
+			state "default", label:'Cast', icon: "st.Electronics.electronics8", action:"goCast", nextState: "Apple / Google"
         }                                
         
         standardTile("netflix", "device.dispMain", height: 1, width: 1, inactiveLabel:false, decoration:"flat") {
             state "Netflix", label:' ', icon: "st.nest.empty", action:""
-            //state "Settings", label:' ', icon:"st.nest.empty", action:""
 			state "default", label:'Netflix', icon: "st.Electronics.electronics7", action:"goNetflix", nextState: "Netflix"
         }     
         
@@ -251,7 +192,6 @@ metadata {
             state "10", label:'${currentValue}', icon: "st.illuminance.illuminance.bright", action:"toggleShift", nextState:"0"
             state "5", label:'${currentValue}', icon: "st.illuminance.illuminance.light", action:"toggleShift", nextState:"10"
             state "0", label:'', icon: "st.illuminance.illuminance.dark", action:"toggleShift", nextState:"5"
-            //state "20", label:'', icon: "st.Weather.weather14", action:"toggleShift", nextState:"5"
         }      
                        
         standardTile("play", "device.playing", height: 1, width: 2, inactiveLabel:false, decoration:"flat") {
@@ -328,7 +268,7 @@ metadata {
         }
          
         valueTile("debug", "debug", height: 1, width: 1, inactiveLabel:false, decoration:"flat") {
-            state "default", label:'!', action:"goTV"
+            state "default", label:'!', action:"goDebug"
         }
          
         valueTile("n1", "temporary", height: 1, width: 1) {state "default", label:'1', action:"go1"}          
@@ -370,21 +310,14 @@ metadata {
 def listMethod(){	log.debug "list method"	}
 def updateMethod(){	log.debug "update method"	}
 
-def debug()
-{
-
- appClose("0", "Settings")
-// appTerm("102", "Settings")
-    //def inc = 1000
-//    def newPos = (state.curPos as Integer) + inc
-    
- //   log.trace "curpos = $state.curPos"
- //   goPoint(6,0)
- //   sendEvent(name:'debug', value:state.curPos, displayed: false)
-    
-	//tvMove("$newPos","0")
-   // updateDataValue("curPos", "$newPos")
-    //
+def goDebug() {
+//for (int i = 1; i<200; i++) {
+//appStatus("$i", "App Num $i")
+//delay(100)
+//}
+appCommand("123", "video")
+ //goTV()
+ //query("data?target=appnum_get&type=1","debug")
 }
 
 def goPoint(x,y) {
@@ -423,11 +356,7 @@ def go0() {	tvCommand(2, "channelChange")}
 
 def goDash() {	tvCommand(402, "channelChange")}
 
-def updated() {
-	log.debug "executing updated()"
-    state.remove("oldMode")
-    state.remove("appList")
-    
+def updated() {    
 	updateDataValue("preOffing","false")
     refresh()
 }
@@ -449,8 +378,6 @@ def setLevel(value) {
     value = value as Integer
     log.trace "setlevel $value"
 	updateDataValue("newLevel","$value")
-	//state.newLevel = value
-   // runIn(1, "setLevelWorker")
     setLevelWorker()
 }
 
@@ -466,7 +393,6 @@ def setLevelWorker() {
         if (value == 26) go26()
         if (value == 32) go32()
         
-        log.debug "it's ${(value == 1) && (state.curMute == 'false')}"
         if ((value == 11) && (state.curMute == 'false')) mute()
         if ((value == 10) && (state.curMute == 'true')) mute()
     } else if (value > 89) {   
@@ -474,36 +400,29 @@ def setLevelWorker() {
         if (value < 95) delayTvCommand(28, 95-value, "channelChange") 
     } else {
     	if (value > 70) delayTvCommand(24, value-70,"volumeChange")
-    	//else if (value > 71) delayTvCommand(24, 5,"volumeChange")
         if (value < 70) delayTvCommand(25, 70-value,"volumeChange")
-        //else if (value < 69) delayTvCommand(25, 5,"volumeChange")
     }
 	sendEvent(name: "level", value: "70", isStateChange: true, displayed: false)
 }
 
 
 def on() {
-	log.debug "Setting 'on'"
+	log.debug "Setting 'on'; preOffing = $state.preOffing"
 	sendEvent(name: 'switch', value:"on")
     sendEvent(name:'working', value:"true", displayed: false)
-    log.trace "preOffing = $state.preOffing"
     updateDataValue("preOffing","false")
 	refresh()
-	//chMode()
 }
 
 def preOff() {
 	log.debug "Executing 'off'"
     updateDataValue("preOffing","false")
-    //sendEvent(name: "level", value: "1", isStateChange: true)
 	sendEvent(name: "switch", value:"off", isStateChange: true)
     sendEvent(name: 'sessionId', value:"", displayed: false)
 	sendEvent(name:'working', value:"off", displayed: false)
     
 	sendEvent(name:'dispMain', value:"", displayed: false)
-	sendEvent(name:'dispDetails', value:"", displayed: false)    
-	sendEvent(name:'chShow', value:"", displayed: false)
-	sendEvent(name:'volShow', value:"", displayed: false)    
+	sendEvent(name:'dispDetails', value:"", displayed: false) 
 	sendEvent(name:'muted', value:"", displayed: false)
 	sendEvent(name:'changed', value:"off", displayed: false)
     unschedule()
@@ -514,16 +433,14 @@ def off() {
     return tvCommand(1)
 }
 
-// parse events into attributes
-def parse(String description) {
-	//log.debug "Parsing '${description}'"    
+
+def parse(String description) {   
     if (description == "updated") sendEvent(name:'refresh', displayed:false)
    
    	def headers = ""
 	def parsedHeaders = ""
     
     def msg = parseLanMessage(description)
-   // log.debug "Parsed: $msg"
 
     def headerMap = msg.headers      // => headers as a Map
     def headerString = msg.header      // => headers as a String
@@ -531,18 +448,16 @@ def parse(String description) {
     def status = msg.status          // => http status code of the response
     def caller = msg.requestId
     if (!caller) caller = ""
-    log.debug "caller is $caller"
   
     def contentType = (headerString =~ /Content-Type:.*/) ? (headerString =~ /Content-Type:.*/)[0] : null
-    log.debug "Status: $status, $contentType, index is $msg.index"
-    //   	  if (msg.body.contains("auid")) updateDataValue("appList", msg.body)
+    log.debug "Caller: $caller, Status: $status, ContentType: $contentType, index: $msg.index"
     
     if (status == 200) {   	  
 		if (contentType?.contains("xml")) {
     		body = new XmlSlurper().parseText(body)
 			def sessionId = body.session.text() 
 			if (valid(sessionId)) sendEvent(name:'sessionId', value:sessionId, displayed:false)    	
-		
+		log.debug "body: $body"
 	        def data = body.data  
 			if (valid(data.text())) { data.children().each{ if (valid(it.text())) {
  		       	log.debug "| ${it.name()} = ${it.text()}"	
@@ -552,16 +467,13 @@ def parse(String description) {
             	if (it.name() == "minor") updateDataValue("chMinor", it.text())
             	if (it.name() == "chname") updateDataValue("chName", it.text())
             	if (it.name() == "progName") updateDataValue("chProg", it.text())           
-            	if (it.name() == "mode") {
-                	updateDataValue("oldMode", state.curMode)
-                    updateDataValue("curMode", it.text())
-                }    
+            	if (it.name() == "mode") updateDataValue("curMode", it.text())    
 				if (it.name() == "mute") updateDataValue("curMute", it.text())
             	if (it.name() == "level") updateDataValue("curLevel", it.text())
         	}	}	}	
 		}
             
-		if (caller=="volumeChange") getVolume()//runIn(1,"getVolume")  
+		if (caller=="volumeChange") getVolume() 
         if (caller=="channelChange") {
             runIn(1,"getChannel")
             runIn(3,"getChannelDup")
@@ -579,7 +491,7 @@ def parse(String description) {
             	log.debug "launched app is: $launchedApp"
 				updateDataValue("curApp","$launchedApp")
                 storeDisplay("smart")
-            } //else runIn(3, "getMode")  
+            }  
             runIn(3, "getMode")             
             runIn(6, "getModeDup") 	
         }   
@@ -603,21 +515,16 @@ def parse(String description) {
         	if (valid(state.curMute) && valid(state.curLevel)) {	
         		def muted       
             	log.debug "curLevel $state.curLevel | curMute $state.curMute"
-	        	if (state.curMute == "true") muted = "true"//sendEvent(name:'muted', value:"true")
-            		else muted = state.curLevel//sendEvent(name:'muted', value:state.curLevel)
-            	sendEvent(name:'muted', value:"$muted", displayed: false)      
-                sendEvent(name:'lock', value:"$muted", displayed: false)  
+	        	if (state.curMute == "true") muted = "true"
+            		else muted = state.curLevel
+            	sendEvent(name:'muted', value:"$muted", displayed: false)     
 
-             //	if (device.currentValue('showMode') == 0) {
-             		if (!device.currentValue("changed").contains("ch")) sendEvent(name: 'changed', value:"$muted", displayed: false)
-             //	}	 
-               // else	if (device.currentValue("showMode") == 100) sendEvent(name: 'volShow', value:"$muted", displayed: false)
+             	if (!device.currentValue("changed").contains("ch")) sendEvent(name: 'changed', value:"$muted", displayed: false)
 			}	else getVolume()
        	}
         
 		if (caller=="getMode") { 
         	if (state.curMode == "TouchPad") {
-				//if (state.oldMode != "Touch
 				getAppStates()  
             }	else
     	    if (state.curMode == "VolCh") getChannel()
@@ -638,7 +545,6 @@ def parse(String description) {
                 updateDataValue("curApp","$temp")
                 log.debug "setting curApp to $temp"
                 storeDisplay("smart")
-                //runIn(30, "getMode") 
              } 
 		}
     }
@@ -660,7 +566,6 @@ def parse(String description) {
           update()
         }
         unschedule("preOff")
-        log.debug "unscheduling preOff"
     }
         
 }
@@ -687,63 +592,41 @@ def storeDisplay(tvMode) {    log.debug "storing Display (tvMode = $tvMode) (cur
                 if (curMain == "Input") sendEvent(name:'playing', value:"none", displayed: false)
                 else sendEvent(name:'playing', value:"play", displayed: false)
                 }    
-            //sendEvent(name:'playing', value:"play") 
 		break    
     	case "true": 
         	curMain = state.chMajor +'.'+ state.chMinor +' - '+ state.chName + ' ('+state.chPhys+')'; 
             curProg = state.chProg
             sendEvent(name:'playing', value:"false", displayed: false)
-            //updateDataValue("curApp","")
 		break
 		case "cast": 
-         	curMain = "GoogleCast"
+         	curMain = "Apple / Google"
             sendEvent(name:'playing', value:"play", displayed: false)
-            //updateDataValue("curApp","")
 		break
 	}
 	sendEvent(name:'dispMain', value:curMain)
 	sendEvent(name:'dispDetails', value:curProg)
-    
-    //if (device.currentValue('showMode') == 100) sendEvent(name: 'changed', value:"ch${state.chMajor}", displayed: false)
 }
 
 def chMode() {
-	log.debug "executing chMode"
 	def chVal = "ch${state.chMajor}"
-    //if (chVal == chtrue) chVal = "ch${state.chMajor}"
-    
-    /*
-	sendEvent(name: 'changed', value:chVal, displayed: false)
-	sendEvent(name: 'volShow', value:device.currentValue("muted"), displayed: false)     
-	//sendEvent(name: 'chShow', value:"hidden")      
-    sendEvent(name: 'chShow', value:"                                                        \n${device.currentValue('dispDetails')}", displayed: false) 
-    sendEvent(name: "showMode", value: 100, displayed: false)
-    */
 }
 
 def volMode() {
-	log.debug "executing volMode"
 	def volVal = device.currentValue('muted')
 	sendEvent(name: 'changed', value:volVal, displayed: false)
     def simpMain
-    if (device.currentValue('dispMain')=="GoogleCast") simpMain = "GoogleCast"
+    if (device.currentValue('dispMain')=="Apple / Google") simpMain = "Apple / Google"
     else if (device.currentValue('dispMain')=="Smart") simpMain = "     Touch   "
     else simpMain = "        "+ state.chMajor +'.'+ state.chMinor
-	sendEvent(name: 'chShow', value:"                                ${simpMain}            \n${device.currentValue('dispDetails')}", displayed: false)    
-	sendEvent(name: 'volShow', value:"hidden", displayed: false)        
-    sendEvent(name: "showMode", value: 0, displayed: false)
 }
 
 def toggleMode(val) {
-	log.debug "slider is $val"
     if (val > 50) chMode() else volMode()
-    //sendEvent(name: "showMode", value: val)
 }
 
 def valueInc(n) {
 	switch(device.currentValue("changed")) {
 		case ~/.*ch.*/:
-			log.debug "chInc($n)"
             if (device.currentValue("tvMode") == "true") {
 				if (n==1) channelUp()
   				if (n==0) channelDown()
@@ -754,7 +637,6 @@ def valueInc(n) {
             }           
             break
         case ~/.*.*/:     
-			log.debug "volumeInc($n)"
 			if (n==1) volumeUp()
   			if (n==0) volumeDown()
     		break         
@@ -776,18 +658,16 @@ def playPause() { if (device.currentValue('playing') == "play") pause()
 				  else if (device.currentValue('playing') == "pause") play()
                  }
 
-def pause() {	log.debug "pause"; //sendEvent(name:'changed', value:"pause")
+def pause() {	log.debug "pause"; 
 				sendEvent(name:'playing', value:"pause", displayed: false)
 				if (device.currentValue('tvMode') == "smart" || device.currentValue('tvMode') == "cast") {
-					tvCommand(34); 
-	  		    	//sendEvent(name:'changed', value:"ch${device.currentValue('tvMode')}", isStateChange: true, displayed: false)
+					tvCommand(34); 	  		    	
 				}
             }
-def play() {	log.debug "play"; //sendEvent(name:'changed', value:"play"); 
+def play() {	log.debug "play";
 				sendEvent(name:'playing', value:"play", displayed: false)
 				if (device.currentValue('tvMode') == "smart" || device.currentValue('tvMode') == "cast") {
-					tvCommand(33) 
-	  		    	//sendEvent(name:'changed', value:"ch${device.currentValue('tvMode')}", isStateChange: true, displayed: false)
+					tvCommand(33) 	  		    	
 				}        
         
         }
@@ -798,11 +678,6 @@ def goShortcut() {
 	if (device.currentValue('tvMode') == "true") tvChannelChange(7,1,7) else {
     	if (device.currentValue('dispMain') == "GoogleCast")  goTV() 
     	else goExit()
-        //delayTvChannelChange(7,1,7, 3)
-        //delayTvChannelChange(7,1,7, 5)
-        //delayTvChannelChange(7,1,7, 10)
-      //  delay(200)  
-      //  tvChannelChange(7,1,7)
         delay(3000)  
         tvChannelChange(7,1,7)
     }    
@@ -810,18 +685,15 @@ def goShortcut() {
 
 def channelUp()	{ if (device.currentValue('shift') == "5") delayTvCommand(27, 5, "channelChange") else
 				  if (device.currentValue('shift') == "10") delayTvCommand(27, 10, "channelChange") else tvCommand(27,"channelChange")
-                 // toggleMode(100); sendEvent(name:'changed', value:"chUp", displayed: false); 
 }
 
 def channelDown(){ if (device.currentValue('shift') == "5") delayTvCommand(28, 5, "channelChange") else
 				  if (device.currentValue('shift') == "10") delayTvCommand(28, 10, "channelChange") else tvCommand(28, "channelChange")
-                 // toggleMode(100); sendEvent(name:'changed', value:"chDown", displayed: false);
 }                  
 
 def volumeUp() { if (device.currentValue('shift') == "5") delayTvCommand(24, 5,"volumeChange") else
 				 if (device.currentValue('shift') == "10") delayTvCommand(24, 10,"volumeChange") else tvCommand(24,"volumeChange")
 				 sendEvent(name:'changed', value:"volDown", displayed: false); //sendEvent(name:'muted', value:"false")
-                 //getVolume()
 }
 
 def volumeDown() { if (device.currentValue('shift') == "5") delayTvCommand(25, 5,"volumeChange") else
@@ -829,22 +701,9 @@ def volumeDown() { if (device.currentValue('shift') == "5") delayTvCommand(25, 5
 				   sendEvent(name:'changed', value:"volDown", displayed: false); //sendEvent(name:'muted', value:"false")
 }
 
-def lock() {
-	log.debug "locker!"
-	sendEvent(name: 'lock', value:"$muted", displayed: false)
-	mute()
-}
-
-def unlock() {
-	sendEvent(name: 'lock', value:"$muted", displayed: false)
-	mute()
-}
-
 def mute() {  
-	log.debug "mute called!"
     tvCommand(26,"volumeChange")
     def muted; if (device.currentValue('muted') == "true") muted = "false" else muted = "true"
-    sendEvent(name: 'lock', value:"$muted", displayed: false)
     log.debug "Current muted: ${device.currentValue('muted')} ...and muted is $muted"
     sendEvent(name:'changed', value:"volChange", displayed: false); sendEvent(name: 'muted', value:muted, displayed: false)
 }  
@@ -853,16 +712,14 @@ def getVolume() { updateDataValue("curMute", "");
 					updateDataValue("curLevel", "")
 					query("data?target=volume_info", "getVolume")  }
 def getVolumeDup() {getVolume()}
-def getMode() { query("data?target=context_ui","getMode") 
-log.trace "GETTING MODE"}
+def getMode() { query("data?target=context_ui","getMode") }
 def getModeDup() {getMode()}
 def getChannel() { query("data?target=cur_channel","getChannel") }
-	def getChannelDup() {getChannel()}
+def getChannelDup() {getChannel()}
 
 def getDisplay() { 	updateDataValue("chMajor", ""); updateDataValue("chPhys", ""); updateDataValue("chType", ""); 
 					updateDataValue("chMinor", ""); updateDataValue("chName", ""); updateDataValue("chProg", "");
-					updateDataValue("curMode", "");
-                    
+					updateDataValue("curMode", "");                    
                     getMode()
                  }
                  
@@ -870,20 +727,18 @@ def getAppStates() {
 	log.debug "gettingAppStates"
     updateDataValue("curApp","")
    
-	["Netflix","Hulu","Amazon","YouTube","Home","Settings","AdvSettings","ChList"].each { //,"Recent","Input","Simp","Video","SetTop","Menu"].each { 
+	["Netflix","Hulu","Amazon","YouTube","Home","Settings","AdvSettings","ChList","Input"].each { //,"Recent","Simp","Video","SetTop","Menu"].each { 
         log.debug "Getting $it"
         runIn(2, "get$it")
     }
-    //runIn(7, "getDone")
     runIn(30, "getDone")
 }
 
 def getDone() {
 	log.debug "getting done & curApp = $state.curApp"
 	if (state.curApp == "") {
-    	log.debug "getting HER done"
 		updateDataValue("curApp","none")
-    	if (state.curMode == "TouchPad")  storeDisplay("smart")
+    	if (state.curMode == "TouchPad") storeDisplay("smart")
     }
 }
 
@@ -918,19 +773,7 @@ def	goCast() { appCommand("160", "transfer")}
 def goRecent() { appCommand("105", "Recent")}
 def goSettings() {   if (device.currentValue('shift') == "0") appCommand("102", "Settings")
 				   	 if (device.currentValue('shift') == "5") tvCommand(417,"modeChange")//appCommand("108", "Settings")
-                     //if (device.currentValue('shift') == "10") appCommand("120", "Settings")
-                     
-}
-
-def goReset() {
-    def tvMode = device.currentValue('tvMode')
-    if (device.currentValue('tvMode') == "smart") {
-    	goExit()
-    }
-    if (device.currentValue('tvMode') == "cast") {
-    	goTV()
-    }
-}
+                 }
 
 def goAdvSettings() { appCommand("120", "AdvSettings")}
 def goTV() { appCommand("119", "goTVmenu")}
@@ -992,7 +835,6 @@ def goLeft() {      if (device.currentValue('shift') == "5") delayTvCommand(14, 
 
 def update()
 {
-	//updateDataValue("chList","[[48,4],[36,5],[7,7],[9,9],[35,20],[25,25],[50,50],[50,50],[50,50]]")
     log.debug "executing Update()"
     getDisplay()
     getVolume() 
@@ -1056,7 +898,6 @@ private Integer convertHexToInt(hex) {
 
 def goService(serviceName, serviceType, protocol, values, requestId="") {
     def method = "POST"
-    //def path = "/roap/api/$serviceType"
     def path = "/$protocol/api/$serviceType"  
     def body = "<?xml version=\"1.0\" encoding=\"utf-8\"?><$serviceType><type>$serviceName</type>$values</$serviceType>"
 	sendHttp(method, path, body, requestId) 
@@ -1075,22 +916,16 @@ def sendHttp(String method, path, body, requestId = "") {
         path: 		"$path",
         body:		"$body",
         headers:	[
-        			//"Soapaction": "urn:schemas-upnp-org:service:RenderingControl:1#SetVolume",
         			HOST: "$televisionIp:8080",
                     CONNECTION:	"Keep-Alive",  
-                     //CONNECTION:	"Close",   
-                    //"Accept":"application/json",
-                    "Content-Type":	"application/atom+xml", //"application/x-apple-binary-plist",
-                    //"Content-Type":	"text/xml; charset=utf-8",//
-                    //"User-Agent": "UDAP/2.0"//
-                    "User-Agent":"Linux UPnP/1.0 SmartThings"
+                    "Content-Type":	"application/atom+xml",                       //"Content-Type":	"text/xml; charset=utf-8",//
+                    "User-Agent":"Linux UPnP/1.0 SmartThings"                     //"User-Agent": "UDAP/2.0"//
                     ]
 	] 
     def hubAction = new physicalgraph.device.HubAction(httpRequest)
     if (valid(requestId)) hubAction.requestId=requestId
-    log.debug "$hubAction"
-	sendHubCommand(hubAction)  
-   // return hubAction
+   // log.debug "$hubAction"
+	sendHubCommand(hubAction)
 }
 
 
