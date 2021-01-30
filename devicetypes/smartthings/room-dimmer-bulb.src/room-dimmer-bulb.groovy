@@ -14,6 +14,7 @@ metadata {
 		capability "Polling"
 		capability "Refresh"
 		capability "Sensor"
+        capability "Light"
         attribute "DeviceWatch-DeviceStatus","string"
 
       command "goClear"

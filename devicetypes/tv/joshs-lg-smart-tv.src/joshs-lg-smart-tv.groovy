@@ -9,7 +9,7 @@ metadata {
         capability "Music Player"
         capability "Refresh"
         
-        attribute "status", "STRING"        
+      //  attribute "status", "STRING"        
         attribute "sessionId", "string"
         attribute "muted", "string"
         attribute "tvMode", "string"        
@@ -28,6 +28,7 @@ metadata {
         command "chMode"
         command "volMode"
         command "mute"
+        command "setMute", ["string"]
         command "getVolume"
         command "getChannel"
         command "getMode"
@@ -38,7 +39,7 @@ metadata {
         command "goExit"
         command "goOK"
         command "goSettings"
-        command "play"
+        command "goPlay"
         command "pause"
         command "playPause"
         command "goUp"
@@ -374,6 +375,21 @@ def setStatus(value) {
      }
 }
 
+def nextTrack() {
+	log.trace "next"
+    volumeUp()
+}
+
+def previousTrack() {
+	log.trace "previous"
+    volumeDown()
+}
+
+def play() {
+	log.trace "play"
+    mute()
+}
+
 def setLevel(value) {
     value = value as Integer
     log.trace "setlevel $value"
@@ -384,7 +400,7 @@ def setLevel(value) {
 def setLevelWorker() {
 	def value = state.newLevel as Integer
 	log.debug "value is $value"
-	if ((value < 45)) {
+	/*if ((value < 45)) {
     	if (value == 7) goShortcut()
         
         if (value == 4) go4()
@@ -398,10 +414,11 @@ def setLevelWorker() {
     } else if (value > 89) {   
         if (value > 95) delayTvCommand(27, value-95, "channelChange")
         if (value < 95) delayTvCommand(28, 95-value, "channelChange") 
-    } else {
+    } else {*/
     	if (value > 70) delayTvCommand(24, value-70,"volumeChange")
         if (value < 70) delayTvCommand(25, 70-value,"volumeChange")
-    }
+        //fuck
+   // }
 	sendEvent(name: "level", value: "70", isStateChange: true, displayed: false)
 }
 
@@ -520,7 +537,8 @@ def parse(String description) {
             	sendEvent(name:'muted', value:"$muted", displayed: false)     
 
              	if (!device.currentValue("changed").contains("ch")) sendEvent(name: 'changed', value:"$muted", displayed: false)
-			}	else getVolume()
+                
+			}	//else getVolume()
        	}
         
 		if (caller=="getMode") { 
@@ -632,7 +650,7 @@ def valueInc(n) {
   				if (n==0) channelDown()
             } 
             if (device.currentValue("tvMode") == "cast" || device.currentValue("tvMode") == "smart" ) {
-				if (n==1) play()
+				if (n==1) goPlay()
   				if (n==0) next()
             }           
             break
@@ -655,7 +673,7 @@ def toggleShift(){
 ///////////////////////////////////////////////
 
 def playPause() { if (device.currentValue('playing') == "play") pause()
-				  else if (device.currentValue('playing') == "pause") play()
+				  else if (device.currentValue('playing') == "pause") goPlay()
                  }
 
 def pause() {	log.debug "pause"; 
@@ -664,7 +682,7 @@ def pause() {	log.debug "pause";
 					tvCommand(34); 	  		    	
 				}
             }
-def play() {	log.debug "play";
+def goPlay() {	log.debug "play";
 				sendEvent(name:'playing', value:"play", displayed: false)
 				if (device.currentValue('tvMode') == "smart" || device.currentValue('tvMode') == "cast") {
 					tvCommand(33) 	  		    	
@@ -701,6 +719,12 @@ def volumeDown() { if (device.currentValue('shift') == "5") delayTvCommand(25, 5
 				   sendEvent(name:'changed', value:"volDown", displayed: false); //sendEvent(name:'muted', value:"false")
 }
 
+def setMute(n)
+{  log.debug "muting $n"
+ if ((n == '1') && (device.currentValue('muted') != 'true')) mute()
+ if ((n == '0') && (device.currentValue('muted') == 'true')) mute()
+}
+
 def mute() {  
     tvCommand(26,"volumeChange")
     def muted; if (device.currentValue('muted') == "true") muted = "false" else muted = "true"
@@ -710,7 +734,8 @@ def mute() {
 
 def getVolume() { updateDataValue("curMute", ""); 
 					updateDataValue("curLevel", "")
-					query("data?target=volume_info", "getVolume")  }
+					query("data?target=volume_info", "getVolume")  
+                    }
 def getVolumeDup() {getVolume()}
 def getMode() { query("data?target=context_ui","getMode") }
 def getModeDup() {getMode()}
@@ -810,9 +835,10 @@ def delay(duration, callback = {})
 }
 
 def delayTvCommand(key, loop, requestId="") {
-	log.debug "delaying..."
+	log.debug "delaying... $loop"
 	for (int c = 0; c < loop; c++) { 
-    	tvCommand(key,requestId)  
+    	tvCommand(key,requestId) 
+        log.trace "delay lopp $c"
         delay(250)  
      }
 }
