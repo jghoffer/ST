@@ -20,8 +20,8 @@ metadata {
         attribute "shift", "string"
         attribute "playing", "string"
         
-        command "setStatus", ["string"] 
-        command "valueInc", ["number"]
+        command "volUp", ["string"]
+        command "volDown", ["string"]
         command "toggleMode", ["number"]
         command "update" 
         command "refresh"
@@ -79,7 +79,6 @@ metadata {
         command "rwd"
         command "fwd"
         command "resetPointer"
-        command "setLevelWorker"
 	}
     
     mappings {
@@ -137,9 +136,7 @@ metadata {
                 attributeState("volNum", icon:"st.custom.sonos.unmuted", label: '${currentValue}', nextState: "volChange", backgroundColor: "#90EBE9", defaultState: true)                
 			}
                 
-            tileAttribute("control", key: "VALUE_CONTROL") {
-                attributeState "default", action:"valueInc"
-         	}       
+   
              tileAttribute ("device.showMode", key: "SLIDER_CONTROL") {
             	attributeState("showMode", action:"toggleMode")
         	}
@@ -316,7 +313,7 @@ def goDebug() {
 //appStatus("$i", "App Num $i")
 //delay(100)
 //}
-appCommand("123", "video")
+  appCommand("123", "video")
  //goTV()
  //query("data?target=appnum_get&type=1","debug")
 }
@@ -354,7 +351,6 @@ def go7() {	tvCommand(9, "channelChange")}
 def go8() {	tvCommand(10, "channelChange")}
 def go9() {	tvCommand(11, "channelChange")}
 def go0() {	tvCommand(2, "channelChange")}
-
 def goDash() {	tvCommand(402, "channelChange")}
 
 def updated() {    
@@ -362,64 +358,25 @@ def updated() {
     refresh()
 }
 
+def volUp(value) { volumeUp(value as Integer) }
+def volDown(value) { volumeDown(value as Integer) }
 
-def setStatus(value) {
-	log.debug "executing setStatus $value"
-    switch(value) {
-    	case "volUp": 
-        	volumeUp()
-            break
-        case "volDown": 
-        	volumeDown()
-            break
-     }
-}
-
-def nextTrack() {
-	log.trace "next"
-    volumeUp()
-}
-
-def previousTrack() {
-	log.trace "previous"
-    volumeDown()
-}
-
-def play() {
-	log.trace "play"
-    mute()
-}
+def nextTrack() { volumeUp(1) }
+def previousTrack() { volumeDown(1) }
+def play() { mute() }
 
 def setLevel(value) {
     value = value as Integer
     log.trace "setlevel $value"
-	updateDataValue("newLevel","$value")
-    setLevelWorker()
-}
-
-def setLevelWorker() {
-	def value = state.newLevel as Integer
-	log.debug "value is $value"
-	/*if ((value < 45)) {
-    	if (value == 7) goShortcut()
-        
-        if (value == 4) go4()
-        if (value == 5) go5()
-        if (value == 9) go9()
-        if (value == 26) go26()
-        if (value == 32) go32()
-        
-        if ((value == 11) && (state.curMute == 'false')) mute()
-        if ((value == 10) && (state.curMute == 'true')) mute()
-    } else if (value > 89) {   
-        if (value > 95) delayTvCommand(27, value-95, "channelChange")
-        if (value < 95) delayTvCommand(28, 95-value, "channelChange") 
-    } else {*/
-    	if (value > 70) delayTvCommand(24, value-70,"volumeChange")
-        if (value < 70) delayTvCommand(25, 70-value,"volumeChange")
-        //fuck
-   // }
-	sendEvent(name: "level", value: "70", isStateChange: true, displayed: false)
+   // if (value > 70) delayTvCommand(24, value-70,"volumeChange")
+   // if (value < 70) delayTvCommand(25, 70-value,"volumeChange")
+   // sendEvent(name: "level", value: "70", isStateChange: true, displayed: false)
+    
+   //def vol = device.currentValue('muted') as Integer
+   def vol = state.curLevel as Integer
+   if (value > vol) volumeUp(value-vol)//delayTvCommand(24, value-vol,"volumeChange")
+   if (value < vol) volumeDown(vol-value)//delayTvCommand(25, vol-value,"volumeChange")
+   sendEvent(name: "level", value: value, isStateChange: true, displayed: false)
 }
 
 
@@ -486,7 +443,10 @@ def parse(String description) {
             	if (it.name() == "progName") updateDataValue("chProg", it.text())           
             	if (it.name() == "mode") updateDataValue("curMode", it.text())    
 				if (it.name() == "mute") updateDataValue("curMute", it.text())
-            	if (it.name() == "level") updateDataValue("curLevel", it.text())
+            	if (it.name() == "level") {
+                	updateDataValue("curLevel", it.text())
+                    setLevel(it.text())
+                }    
         	}	}	}	
 		}
             
@@ -569,18 +529,17 @@ def parse(String description) {
 
     def working = device.currentValue('working')  
 
-    if (working == "true") {
+  //  if (working == "true") {
     	if (status == 401) {
     		log.debug "Unauthorized - clearing session value"
            	refresh()
         }
-    }
+  //  }
     
     if (working != "off") {
    		sendEvent(name:'working', value:"false", displayed: false)
         if (device.currentValue("switch") == "off") {
        	  sendEvent(name: 'switch', value:"on")
-          sendEvent(name: "level", value: "70", isStateChange: true, displayed: false)
           update()
         }
         unschedule("preOff")
@@ -642,24 +601,6 @@ def toggleMode(val) {
     if (val > 50) chMode() else volMode()
 }
 
-def valueInc(n) {
-	switch(device.currentValue("changed")) {
-		case ~/.*ch.*/:
-            if (device.currentValue("tvMode") == "true") {
-				if (n==1) channelUp()
-  				if (n==0) channelDown()
-            } 
-            if (device.currentValue("tvMode") == "cast" || device.currentValue("tvMode") == "smart" ) {
-				if (n==1) goPlay()
-  				if (n==0) next()
-            }           
-            break
-        case ~/.*.*/:     
-			if (n==1) volumeUp()
-  			if (n==0) volumeDown()
-    		break         
-    }
-}
 
 ////////////////////////////////
 
@@ -709,15 +650,17 @@ def channelDown(){ if (device.currentValue('shift') == "5") delayTvCommand(28, 5
 				  if (device.currentValue('shift') == "10") delayTvCommand(28, 10, "channelChange") else tvCommand(28, "channelChange")
 }                  
 
-def volumeUp() { if (device.currentValue('shift') == "5") delayTvCommand(24, 5,"volumeChange") else
+def volumeUp(value) {delayTvCommand(24, value,"volumeChange")}
+/*{ if (device.currentValue('shift') == "5") delayTvCommand(24, 5,"volumeChange") else
 				 if (device.currentValue('shift') == "10") delayTvCommand(24, 10,"volumeChange") else tvCommand(24,"volumeChange")
 				 sendEvent(name:'changed', value:"volDown", displayed: false); //sendEvent(name:'muted', value:"false")
-}
+}*/
 
-def volumeDown() { if (device.currentValue('shift') == "5") delayTvCommand(25, 5,"volumeChange") else
+def volumeDown(value) {delayTvCommand(25, value,"volumeChange")}
+/*{ if (device.currentValue('shift') == "5") delayTvCommand(25, 5,"volumeChange") else
 				   if (device.currentValue('shift') == "10") delayTvCommand(25, 10,"volumeChange") else tvCommand(25,"volumeChange")
 				   sendEvent(name:'changed', value:"volDown", displayed: false); //sendEvent(name:'muted', value:"false")
-}
+}*/
 
 def setMute(n)
 {  log.debug "muting $n"
