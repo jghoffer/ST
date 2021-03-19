@@ -51,7 +51,6 @@ metadata {
         command "goInput"
         command "reqAuthCommand"
         command "goInfo"
-        command "goShortcut"
         command "goTV"
         command "goNetflix"
         command "goHulu"        
@@ -80,7 +79,8 @@ metadata {
         command "fwd"
         command "resetPointer"
 	}
-    
+ 
+ /*
     mappings {
   path("/event") {
     action: [
@@ -104,15 +104,11 @@ metadata {
     ]
   }   
 }
+*/
     
     preferences {
         input("televisionIp", "string", title:"Television IP Address", description: "Television's IP address", required: true, displayDuringSetup: false)
         input("pairingKey", "string", title:"Pairing Key", description: "Pairing key", required: true, displayDuringSetup: false)
- 		input("scVolume", "number", title:"Shortcut Volume", description: "", required: false, default: "7", displayDuringSetup: false) 
- 		input("scMajor", "number", title:"Shortcut Major", description: "", required: false, default: "7", displayDuringSetup: false)
-        input("scMinor", "number", title:"Shortcut Minor", description: "", required: false, default: "1", displayDuringSetup: false)
-        input("scPnys", "number", title:"Shortcut Pysical", description: "", required: false, default: "7", displayDuringSetup: false)
-
 	}
 
 	simulator 
@@ -120,7 +116,7 @@ metadata {
 		// TODO: define status and reply messages here
 	}
 
-	tiles(scale: 2) {
+/*	tiles(scale: 2) {
         multiAttributeTile(name: "preview", type: "generic", width: 6, height: 4) {
            	tileAttribute("device.chShow", key: "MARQUEE") { 
             	attributeState "default", label:'${currentValue}'//, action: "volMode"
@@ -128,7 +124,7 @@ metadata {
             }                        
             
             tileAttribute ("device.changed", key: "PRIMARY_CONTROL", wordWrap: true) {
-           	    attributeState("off", icon:"st.Electronics.electronics15", label: 'Off',/* action: "on", */nextState: "on", backgroundColor: "#ffffff")
+           	    attributeState("off", icon:"st.Electronics.electronics15", label: 'Off',nextState: "on", backgroundColor: "#ffffff")
 				attributeState "volUp", icon:"st.custom.sonos.unmuted", label:'+', backgroundColor:"#90EBE9", nextState:"chChange"		
 				attributeState "volDown", icon:"st.custom.sonos.unmuted", label:'-', backgroundColor:"#90EBE9", nextState:"chChange"	
                 attributeState "volChange", icon:'st.custom.sonos.unmuted', label:'', backgroundColor:"#90EBE9", nextState:"volNum"
@@ -302,56 +298,11 @@ metadata {
                  "n5","n6","n7","n8",
                  "n9","nDash","n0"
                  ])
-	}
+	} */
 }
 
-def listMethod(){	log.debug "list method"	}
-def updateMethod(){	log.debug "update method"	}
-
-def goDebug() {
-//for (int i = 1; i<200; i++) {
-//appStatus("$i", "App Num $i")
-//delay(100)
-//}
-  appCommand("123", "video")
- //goTV()
- //query("data?target=appnum_get&type=1","debug")
-}
-
-def goPoint(x,y) {
-	unschedule("resetPointer")
-    tvMove("1","1")
-    tvMove("-1","-1")
-    
-	x = x + (state.curPos.split(":")[0] as Integer)
-    y = y + (state.curPos.split(":")[1] as Integer)
-    updateDataValue("curPos", "${x}:${y}")
-    
-	def xDec = Math.floor(x/15); def yDec = Math.floor(y/15)
-	x = x-(xDec*15) as Integer; y = y-(yDec*15) as Integer 
-
-	for (int i = 0; i < xDec; i++) tvMove("15","0")
-	for (int i = 0; i < yDec; i++) tvMove("0","15")
-        log.debug "$x, $y"
-    tvMove("$x","$y")
-    
-    runIn(10,"resetPointer")
-}
-
-def resetPointer() { updateDataValue("curPos", "0:0"); sendEvent(name:'debug', value:"", displayed: false) }
-
-
-def go1() {	tvCommand(3, "channelChange")}
-def go2() {	tvCommand(4, "channelChange")}
-def go3() {	tvCommand(5, "channelChange")}
-def go4() {	tvCommand(6, "channelChange")}
-def go5() {	tvCommand(7, "channelChange")}
-def go6() {	tvCommand(8, "channelChange")}
-def go7() {	tvCommand(9, "channelChange")}
-def go8() {	tvCommand(10, "channelChange")}
-def go9() {	tvCommand(11, "channelChange")}
-def go0() {	tvCommand(2, "channelChange")}
-def goDash() {	tvCommand(402, "channelChange")}
+//def listMethod(){	log.debug "list method"	}
+//def updateMethod(){	log.debug "update method"	}
 
 def updated() {    
 	updateDataValue("preOffing","false")
@@ -368,11 +319,7 @@ def play() { mute() }
 def setLevel(value) {
     value = value as Integer
     log.trace "setlevel $value"
-   // if (value > 70) delayTvCommand(24, value-70,"volumeChange")
-   // if (value < 70) delayTvCommand(25, 70-value,"volumeChange")
-   // sendEvent(name: "level", value: "70", isStateChange: true, displayed: false)
     
-   //def vol = device.currentValue('muted') as Integer
    def vol = state.curLevel as Integer
    if (value > vol) volumeUp(value-vol)//delayTvCommand(24, value-vol,"volumeChange")
    if (value < vol) volumeDown(vol-value)//delayTvCommand(25, vol-value,"volumeChange")
@@ -455,6 +402,8 @@ def parse(String description) {
             runIn(1,"getChannel")
             runIn(3,"getChannelDup")
         }    
+        
+        /*
         if (caller=="modeChange") {
                 sendEvent(name:'working', value:"true", displayed: false)
         	    runIn(2,"getMode") 
@@ -487,21 +436,8 @@ def parse(String description) {
 			log.debug "APPID: $temp = $body"
             updateDataValue("id$temp", "$body")
         }
-                
-		if (caller=="getVolume") { 
-        	if (valid(state.curMute) && valid(state.curLevel)) {	
-        		def muted       
-            	log.debug "curLevel $state.curLevel | curMute $state.curMute"
-	        	if (state.curMute == "true") muted = "true"
-            		else muted = state.curLevel
-            	sendEvent(name:'muted', value:"$muted", displayed: false)     
-
-             	if (!device.currentValue("changed").contains("ch")) sendEvent(name: 'changed', value:"$muted", displayed: false)
-                
-			}	//else getVolume()
-       	}
         
-		if (caller=="getMode") { 
+        if (caller=="getMode") { 
         	if (state.curMode == "TouchPad") {
 				getAppStates()  
             }	else
@@ -516,6 +452,23 @@ def parse(String description) {
         	}   
         }	else getMode()	}
         
+        
+        */
+                
+		if (caller=="getVolume") { 
+        	if (valid(state.curMute) && valid(state.curLevel)) {	
+        		def muted       
+            	log.debug "curLevel $state.curLevel | curMute $state.curMute"
+	        	if (state.curMute == "true") muted = "true"
+            		else muted = state.curLevel
+            	sendEvent(name:'muted', value:"$muted", displayed: false)     
+
+             	if (!device.currentValue("changed").contains("ch")) sendEvent(name: 'changed', value:"$muted", displayed: false)
+                
+			}	//else getVolume()
+       	}
+        
+
 		if (caller.contains("status:")) {
         	def temp = caller.split(":")[1]
 			log.debug "$temp = $body"
@@ -546,7 +499,7 @@ def parse(String description) {
     }
         
 }
-
+/*
 def storeDisplay(tvMode) {    log.debug "storing Display (tvMode = $tvMode) (curApp = $state.curApp) "
     sendEvent(name:'tvMode', value:tvMode, linkText: "Mode Change", descriptionText: "$tvMode")
     if (tvMode != "true") updateDataValue("chMajor", "$tvMode") 
@@ -612,7 +565,7 @@ def toggleShift(){
 }
 
 ///////////////////////////////////////////////
-
+*/
 def playPause() { if (device.currentValue('playing') == "play") pause()
 				  else if (device.currentValue('playing') == "pause") goPlay()
                  }
@@ -633,15 +586,6 @@ def goPlay() {	log.debug "play";
 def fwd() {log.debug "fwd"; tvCommand(36)}
 def rwd() {log.debug "rwd"; tvCommand(37)}
 
-def goShortcut() { 	
-	if (device.currentValue('tvMode') == "true") tvChannelChange(7,1,7) else {
-    	if (device.currentValue('dispMain') == "GoogleCast")  goTV() 
-    	else goExit()
-        delay(3000)  
-        tvChannelChange(7,1,7)
-    }    
-}
-
 def channelUp()	{ if (device.currentValue('shift') == "5") delayTvCommand(27, 5, "channelChange") else
 				  if (device.currentValue('shift') == "10") delayTvCommand(27, 10, "channelChange") else tvCommand(27,"channelChange")
 }
@@ -651,16 +595,10 @@ def channelDown(){ if (device.currentValue('shift') == "5") delayTvCommand(28, 5
 }                  
 
 def volumeUp(value) {delayTvCommand(24, value,"volumeChange")}
-/*{ if (device.currentValue('shift') == "5") delayTvCommand(24, 5,"volumeChange") else
-				 if (device.currentValue('shift') == "10") delayTvCommand(24, 10,"volumeChange") else tvCommand(24,"volumeChange")
-				 sendEvent(name:'changed', value:"volDown", displayed: false); //sendEvent(name:'muted', value:"false")
-}*/
+
 
 def volumeDown(value) {delayTvCommand(25, value,"volumeChange")}
-/*{ if (device.currentValue('shift') == "5") delayTvCommand(25, 5,"volumeChange") else
-				   if (device.currentValue('shift') == "10") delayTvCommand(25, 10,"volumeChange") else tvCommand(25,"volumeChange")
-				   sendEvent(name:'changed', value:"volDown", displayed: false); //sendEvent(name:'muted', value:"false")
-}*/
+
 
 def setMute(n)
 {  log.debug "muting $n"
@@ -680,6 +618,8 @@ def getVolume() { updateDataValue("curMute", "");
 					query("data?target=volume_info", "getVolume")  
                     }
 def getVolumeDup() {getVolume()}
+
+/*
 def getMode() { query("data?target=context_ui","getMode") }
 def getModeDup() {getMode()}
 def getChannel() { query("data?target=cur_channel","getChannel") }
@@ -690,7 +630,7 @@ def getDisplay() { 	updateDataValue("chMajor", ""); updateDataValue("chPhys", ""
 					updateDataValue("curMode", "");                    
                     getMode()
                  }
-                 
+
 def getAppStates() {
 	log.debug "gettingAppStates"
     updateDataValue("curApp","")
@@ -709,6 +649,7 @@ def getDone() {
     	if (state.curMode == "TouchPad") storeDisplay("smart")
     }
 }
+*/
 
 def getAppId(appName) { query("apptoapp/data/$appName", "appname:$appName") }
                  
@@ -786,28 +727,16 @@ def delayTvCommand(key, loop, requestId="") {
      }
 }
     
-def goUp() {
-    if (device.currentValue('shift') == "5") delayTvCommand(12, 3)  else
-    if (device.currentValue('shift') == "10") delayTvCommand(12, 6) else tvCommand(12)   
-}
-      
-def goDown() {
-    if (device.currentValue('shift') == "5") delayTvCommand(13, 3) else
-    if (device.currentValue('shift') == "10") delayTvCommand(13, 6) else tvCommand(13)
-}
+def goUp() { tvCommand(12) }
+def goDown() { tvCommand(13) }
         
-def goRight() {		log.debug "${device.currentValue('shift')}"
-					if (device.currentValue('shift') == "5") delayTvCommand(15, 3) else
-    				if (device.currentValue('shift') == "10") delayTvCommand(15, 6) else tvCommand(15) }
-def goLeft() {      if (device.currentValue('shift') == "5") delayTvCommand(14, 3) else
-    				if (device.currentValue('shift') == "10") delayTvCommand(14, 6) else tvCommand(14) }
+def goRight() {	tvCommand(15) }
+def goLeft() { tvCommand(14) }
 
 def update()
 {
     log.debug "executing Update()"
-    getDisplay()
     getVolume() 
-    cursorVisible("true")
 }
 
 def refresh() 
@@ -827,19 +756,6 @@ def refresh()
     if (device.currentValue('switch') == "off") sendEvent(name:'working', value:"false", displayed: false)
 }
 
-def tvChannelChange(major, minor, phys) {
-    goCommand("HandleChannelChange",
-    			"<major>${major}</major><minor>${minor}</minor><sourceIndex>1</sourceIndex><physicalNum>${phys}</physicalNum>",
-                "channelChange")
-}
-
-def delayTvChannelChange(major, minor, phys, loop) {
-	log.debug "delaying..."
-	for (int c = 0; c < loop; c++) { 
-    	tvChannelChange(major, minor, phys)
-        delay(250)  
-     }
-}
 
 def tvClick() {	goCommand("HandleTouchClick"); 	goCommand("HandleTouchClick")}    
 def tvMove(x, y) {	goCommand("HandleTouchMove","<x>$x</x><y>$y</y>")	}
