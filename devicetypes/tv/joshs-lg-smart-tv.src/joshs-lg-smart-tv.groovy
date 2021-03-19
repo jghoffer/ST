@@ -9,7 +9,6 @@ metadata {
         capability "Music Player"
         capability "Refresh"
         
-      //  attribute "status", "STRING"        
         attribute "sessionId", "string"
         attribute "muted", "string"
         attribute "tvMode", "string"        
@@ -62,49 +61,11 @@ metadata {
         command "goChList"
         command "toggleShift"
         
-        command "go1"
-        command "go2"
-        command "go3"
-        command "go4"
-        command "go5"
-        command "go6"
-        command "go7"
-        command "go8"
-        command "go9"
-        command "go0"
-        command "goDash"
-                
-        command "goDebug"
         command "rwd"
         command "fwd"
         command "resetPointer"
 	}
  
- /*
-    mappings {
-  path("/event") {
-    action: [
-      GET: "listMethod",
-      PUT: "updateMethod",
-      POST: "updateMethod"
-    ]
-  }
-  path("/udap/api/event/") {
-    action: [
-      GET: "listMethod",
-      PUT: "updateMethod",
-      POST: "updateMethod"
-    ]
-  }  
-  path("/udap/api/:event") {
-    action: [
-      GET: "listMethod",
-      PUT: "updateMethod",
-      POST: "updateMethod"
-    ]
-  }   
-}
-*/
     
     preferences {
         input("televisionIp", "string", title:"Television IP Address", description: "Television's IP address", required: true, displayDuringSetup: false)
@@ -116,193 +77,8 @@ metadata {
 		// TODO: define status and reply messages here
 	}
 
-/*	tiles(scale: 2) {
-        multiAttributeTile(name: "preview", type: "generic", width: 6, height: 4) {
-           	tileAttribute("device.chShow", key: "MARQUEE") { 
-            	attributeState "default", label:'${currentValue}'//, action: "volMode"
-                attributeState "hidden", icon:" ", label:''
-            }                        
-            
-            tileAttribute ("device.changed", key: "PRIMARY_CONTROL", wordWrap: true) {
-           	    attributeState("off", icon:"st.Electronics.electronics15", label: 'Off',nextState: "on", backgroundColor: "#ffffff")
-				attributeState "volUp", icon:"st.custom.sonos.unmuted", label:'+', backgroundColor:"#90EBE9", nextState:"chChange"		
-				attributeState "volDown", icon:"st.custom.sonos.unmuted", label:'-', backgroundColor:"#90EBE9", nextState:"chChange"	
-                attributeState "volChange", icon:'st.custom.sonos.unmuted', label:'', backgroundColor:"#90EBE9", nextState:"volNum"
-                attributeState("true", icon:"st.custom.sonos.muted", label: '', nextState: "volChange", backgroundColor: "#90EBE9")
-                attributeState("volNum", icon:"st.custom.sonos.unmuted", label: '${currentValue}', nextState: "volChange", backgroundColor: "#90EBE9", defaultState: true)                
-			}
-                
-   
-             tileAttribute ("device.showMode", key: "SLIDER_CONTROL") {
-            	attributeState("showMode", action:"toggleMode")
-        	}
-        }  
-        standardTile("power", "device.switch", height: 2, width: 2, inactiveLabel:false, icon:"st.switches.switch.on") {
-    		state "on", label: 'On',backgroundColor: "#41F073", action: "off"
-    		state "off", label: ' ', action: "on"
-  		}        
-        valueTile("back", "device.status", height: 1, width: 2, inactiveLabel:false, decoration:"flat") {
-            state "default", label:'Back', icon:"", action:"goBack"
-        }     
-        standardTile("home", "device.dispMain", height: 1, width: 1, inactiveLabel:false, decoration:"flat") {          
-            state "Home", label:'Exit', icon: "st.unknown.zwave.static-controller", action:"goExit"
-            state "Settings", label:' ', icon:"st.nest.empty", action:""
-            state "default", label:'Home', icon:"st.nest.nest-home", action:"goHome"
-        }     
-            
-        standardTile("ok", "device.status", height: 2, width: 2, inactiveLabel:false, decoration:"flat") {
-            state "default", label:'OK', icon: "st.samsung.da.REF_2line_freezer", action:"goOK"
-        }        
-        
-        standardTile("input", "device.dispMain", height: 1, width: 1, inactiveLabel:false, decoration:"flat") {
-            state "Input", label:' ', icon:"st.nest.empty", action:""
-            state "Netflix", label:' ', icon:"st.nest.empty", action:""           
-            state "default", label:'Input', icon: "st.Electronics.electronics4", action:"goInput", nextState: "Input"
-        }     
-        
-        standardTile("simp", "device.dispMain", height: 1, width: 1, inactiveLabel:false, decoration:"flat") {
-            state "Smart", label:'Exit', icon: "st.unknown.zwave.static-controller", action:"goExit", nextState: "Smart"
-            state "Netflix", label:'Exit', icon: "st.unknown.zwave.static-controller", action:"goExit", nextState: "Smart"
-            state "Input", label:'Exit', icon: "st.unknown.zwave.static-controller", action:"goExit", nextState: "Smart" 
-            state "Settings", label:'Exit', icon: "st.unknown.zwave.static-controller", action:"goExit", nextState: "Smart"
-            state "Home", label:'Exit', icon: "st.unknown.zwave.static-controller", action:"goExit", nextState: "Smart" 
-			state "default", label:'Cast', icon: "st.Electronics.electronics8", action:"goCast", nextState: "Apple / Google"
-        }                                
-        
-        standardTile("netflix", "device.dispMain", height: 1, width: 1, inactiveLabel:false, decoration:"flat") {
-            state "Netflix", label:' ', icon: "st.nest.empty", action:""
-			state "default", label:'Netflix', icon: "st.Electronics.electronics7", action:"goNetflix", nextState: "Netflix"
-        }     
-        
-        standardTile("rwd", "rwd", height: 1, width: 1, inactiveLabel:false, decoration:"flat") {
-          state "default", label:'', icon: "st.sonos.previous-btn", action:"rwd"
-        }      
-        
-        standardTile("fwd", "fwd", height: 1, width: 1, inactiveLabel:false, decoration:"flat") {
-          state "default", label:'', icon: "st.sonos.next-btn", action:"fwd"
-        }      
-        
-        standardTile("shift", "device.shift", height: 1, width: 1, inactiveLabel:false, decoration:"flat") {
-            state "10", label:'${currentValue}', icon: "st.illuminance.illuminance.bright", action:"toggleShift", nextState:"0"
-            state "5", label:'${currentValue}', icon: "st.illuminance.illuminance.light", action:"toggleShift", nextState:"10"
-            state "0", label:'', icon: "st.illuminance.illuminance.dark", action:"toggleShift", nextState:"5"
-        }      
-                       
-        standardTile("play", "device.playing", height: 1, width: 2, inactiveLabel:false, decoration:"flat") {
-            state "pause", label:'', icon: "st.sonos.play-btn", action:"play", nextState: "play"  
-            state "play", label:'', icon: "st.sonos.pause-btn", action:"pause", nextState: "pause"
-            state "default", label:' ', icon:"st.nest.empty", action:""
-          //  state "false", label:'!', icon:"st.unknown.zwave.remote-controller", action:"goShortcut", nextState: "false"
-        }      
-        
-        standardTile("settings", "device.dispMain", height: 1, width: 1, inactiveLabel:false, decoration:"flat") {
-            state "settings", label:'Advanced', icon: "st.secondary.configure", action:"goAdvSettings",nextState:"settings"
-           
-            state "Smart", label:'Options', icon: "st.secondary.tools", action:"goMenu", nextState: "smart" 
-            state "Netflix", label:'Options', icon: "st.secondary.tools", action:"goMenu", nextState: "smart" 
-           // state "Hulu", label:'Options', icon: "st.secondary.tools", action:"goMenu", nextState: "smart" 
-            state "default", label:'Settings', icon: "st.secondary.tools", action:"goSettings",nextState:"settings"
-            
-            //st.unknown.zwave.remote-controller to
-        }             
-        standardTile("up", "device.tvMode", height: 1, width:2, inactiveLabel:false, decoration:"flat") {
-            state "true", label:'+', icon:"st.thermostat.thermostat-up-inactive", action:"channelUp", nextState: "true"
-            state "default", label:'', icon:"st.thermostat.thermostat-up", action:"goUp", nextState: "default"
-        }     
-        
-        standardTile("down", "device.tvMode", height: 1, width: 2, inactiveLabel:false, decoration:"flat") {
-            state "true", label:'-', icon:"st.thermostat.thermostat-down-inactive", action:"channelDown", nextState: "true"
-            state "default", label:'', icon:"st.thermostat.thermostat-down", action:"goDown", nextState: "default"
-        }  
-        standardTile("right", "device.shift", height: 2, width: 1, inactiveLabel:false, decoration:"flat") {
-            state "0", label:'', icon:"st.thermostat.thermostat-right", action:"goRight",nextState:"0"
-            state "5", label:'*', icon:"st.thermostat.thermostat-right", action:"goRight",nextState:"5"
-            state "10", label:'* * *', icon:"st.thermostat.thermostat-right", action:"goRight",nextState:"10"
 
-		}  
-        standardTile("left", "device.shift", height: 2, width: 1, inactiveLabel:false, decoration:"flat") {
-            state "0", label:'', icon:"st.thermostat.thermostat-left", action:"goLeft",nextState:"0"
-            state "5", label:'*', icon:"st.thermostat.thermostat-left", action:"goLeft",nextState:"5"
-            state "10", label:'* * *', icon:"st.thermostat.thermostat-left", action:"goLeft",nextState:"10"
-        }  
-        
-        standardTile("mute", "device.muted", height: 2, width: 2, inactiveLabel:false, decoration:"flat") {
-            state "true", label:'Muted', icon:"st.custom.sonos.muted", action:"mute", nextState: "false"
-            state "false", label:'', icon:"st.custom.sonos.unmuted", action:"mute", nextState: "true"
-            state "default", label:'${currentValue}', icon:"st.custom.sonos.unmuted", action:"mute", nextState: "true"
-        }
-        standardTile("volumeUp", "device.shift", height: 2, width: 2, inactiveLabel:false, decoration:"flat") {
-            state "0", label:'', icon:"st.custom.buttons.add-icon", action:"TV.volumeUp",nextState:"0"  
-            state "5", label:'*  *', icon:"st.custom.buttons.add-icon", action:"TV.volumeUp",nextState:"5"
-            state "10", label:'*   *   *   *', icon:"st.custom.buttons.add-icon", action:"TV.volumeUp",nextState:"10"            
-        }
-        standardTile("volumeDown", "device.shift", height: 2, width: 2, inactiveLabel:false, decoration:"flat") {
-            state "0", label:'', icon:"st.custom.buttons.subtract-icon", action:"TV.volumeDown",nextState:"0"  
-            state "5", label:'*  *', icon:"st.custom.buttons.subtract-icon", action:"TV.volumeDown",nextState:"5"
-            state "10", label:'*   *   *   *', icon:"st.custom.buttons.subtract-icon", action:"TV.volumeDown",nextState:"10" 
-        }
-        standardTile("refresh", "device.status", height: 1, width: 1, inactiveLabel:false, decoration:"flat") {
-            state "default", label:'', icon:"st.secondary.refresh", action:"Refresh.refresh"
-        }
-
-        valueTile("dummy", "dummy", height: 1, width: 1, inactiveLabel:false, decoration:"flat") {
-            state "default", label:"", icon:" "
-        }
-        
-        valueTile("dispMain", "device.dispMain", height: 1, width: 4, inactiveLabel:false, decoration:"flat") {
-            state "default", label:'${currentValue}', icon:" ", action:"getDisplay"
-        } 
-        
-        valueTile("dispDetails", "device.dispDetails", height: 1, width: 3, inactiveLabel:false, decoration:"flat") {
-            state "default", label:'${currentValue}', icon:" ", action:"goInfo"
-        }             
-
-		standardTile("reqAuth", "reqAuth", height: 1, width: 1, inactiveLabel:false, decoration:"flat") {
-            state "default", label:"Pairing Key", icon:" ", action:"reqAuthCommand"
-        }
-         
-        valueTile("debug", "debug", height: 1, width: 1, inactiveLabel:false, decoration:"flat") {
-            state "default", label:'!', action:"goDebug"
-        }
-         
-        valueTile("n1", "temporary", height: 1, width: 1) {state "default", label:'1', action:"go1"}          
-        valueTile("n2", "temporary", height: 1, width: 1) {state "default", label:'2', action:"go2"}          
-        valueTile("n3", "temporary", height: 1, width: 1) {state "default", label:'3', action:"go3"}          
-        valueTile("n4", "temporary", height: 1, width: 1) {state "default", label:'4', action:"go4"}          
-        valueTile("n5", "temporary", height: 1, width: 1) {state "default", label:'5', action:"go5"}          
-        valueTile("n6", "temporary", height: 1, width: 1) {state "default", label:'6', action:"go6"}          
-        valueTile("n7", "temporary", height: 1, width: 1) {state "default", label:'7', action:"go7"}          
-        valueTile("n8", "temporary", height: 1, width: 1) {state "default", label:'8', action:"go8"}          
-        valueTile("n9", "temporary", height: 1, width: 1) {state "default", label:'9', action:"go9"}          
-        valueTile("n0", "temporary", height: 1, width: 1) {state "default", label:'0', action:"go0"}          
-                 
-        valueTile("nDash", "temporary", height: 1, width: 1) {state "default", label:'-', action:"goDash"} 
-        
-        standardTile("cursorState", "temporary", height: 1, width: 2, inactiveLabel:false, decoration:"flat") {
-            state "default", label:"", icon: "st.motion.acceleration.active", action:"goInfo", nextState: "changed"
-        }
-        
-        
-        main (["preview"])
-        
-		details(["power","dispMain","home","dispDetails", 
-        		 "input","netflix","simp","up","shift",
-                 "back", "left", "ok","right",
-                 "play",
-                 "rwd","fwd","debug",
-                 "down", "settings",
-                 "volumeDown", "mute", "volumeUp",
-                 //"temp1","temp2",
-                 "n1","n2","n3","n4",
-                   "refresh","reqAuth",
-                 "n5","n6","n7","n8",
-                 "n9","nDash","n0"
-                 ])
-	} */
 }
-
-//def listMethod(){	log.debug "list method"	}
-//def updateMethod(){	log.debug "update method"	}
 
 def updated() {    
 	updateDataValue("preOffing","false")
@@ -402,58 +178,7 @@ def parse(String description) {
             runIn(1,"getChannel")
             runIn(3,"getChannelDup")
         }    
-        
-        /*
-        if (caller=="modeChange") {
-                sendEvent(name:'working', value:"true", displayed: false)
-        	    runIn(2,"getMode") 
-        		runIn(4,"getModeDup") 
-                
-        }
-        
-        if (caller.contains("launch:")) {
-            def launchedApp = caller.split(":")[1]
-            if (launchedApp == "Netflix" || launchedApp == "Hulu" || launchedApp == "Amazon"  || launchedApp == "Settings"  || launchedApp == "YouTube") {
-            	log.debug "launched app is: $launchedApp"
-				updateDataValue("curApp","$launchedApp")
-                storeDisplay("smart")
-            }  
-            runIn(3, "getMode")             
-            runIn(6, "getModeDup") 	
-        }   
-        
-        if (caller.contains("goTVmenu")) {
-        	delay(75)
-            tvCommand(12)
-            delay(325)
-            tvCommand(20)
-            runIn(2, "getMode")
-            runIn(4, "getModeDup") 
-        }
-        
-        if (caller.contains("appname:")) {
-        	def temp = caller.split(":")[1]
-			log.debug "APPID: $temp = $body"
-            updateDataValue("id$temp", "$body")
-        }
-        
-        if (caller=="getMode") { 
-        	if (state.curMode == "TouchPad") {
-				getAppStates()  
-            }	else
-    	    if (state.curMode == "VolCh") getChannel()
-        }
-        if (caller=="getChannel") { if (valid(state.curMode)) {
-        	if (state.curMode == "VolCh") { 
-                if (valid(state.chType)) {
-					if (state.chType == "satellite") storeDisplay("cast")
-            		if (state.chType == "terrestrial") storeDisplay("true")
-            	}	else getChannel()
-        	}   
-        }	else getMode()	}
-        
-        
-        */
+
                 
 		if (caller=="getVolume") { 
         	if (valid(state.curMute) && valid(state.curLevel)) {	
@@ -499,73 +224,7 @@ def parse(String description) {
     }
         
 }
-/*
-def storeDisplay(tvMode) {    log.debug "storing Display (tvMode = $tvMode) (curApp = $state.curApp) "
-    sendEvent(name:'tvMode', value:tvMode, linkText: "Mode Change", descriptionText: "$tvMode")
-    if (tvMode != "true") updateDataValue("chMajor", "$tvMode") 
-	def curMain; def curProg=""
-    switch(tvMode) {
-		case "smart": 
-        	curMain = "Smart"
-            if (state.curApp == "") curProg = "Reading..." else
-            if (state.curApp == "none") {
-            	curProg = "Unknown"
-                sendEvent(name:'playing', value:"play")
-            } else
-            {
-            	log.debug "special case!"
-            	curMain = "$state.curApp" 
-            	curProg = "Smart App"
-                
-                if (curMain == "Settings") sendEvent(name:'playing', value:"settings", displayed: false) else
-                if (curMain == "Home") sendEvent(name:'playing', value:"none", displayed: false) else
-                if (curMain == "Input") sendEvent(name:'playing', value:"none", displayed: false)
-                else sendEvent(name:'playing', value:"play", displayed: false)
-                }    
-		break    
-    	case "true": 
-        	curMain = state.chMajor +'.'+ state.chMinor +' - '+ state.chName + ' ('+state.chPhys+')'; 
-            curProg = state.chProg
-            sendEvent(name:'playing', value:"false", displayed: false)
-		break
-		case "cast": 
-         	curMain = "Apple / Google"
-            sendEvent(name:'playing', value:"play", displayed: false)
-		break
-	}
-	sendEvent(name:'dispMain', value:curMain)
-	sendEvent(name:'dispDetails', value:curProg)
-}
 
-def chMode() {
-	def chVal = "ch${state.chMajor}"
-}
-
-def volMode() {
-	def volVal = device.currentValue('muted')
-	sendEvent(name: 'changed', value:volVal, displayed: false)
-    def simpMain
-    if (device.currentValue('dispMain')=="Apple / Google") simpMain = "Apple / Google"
-    else if (device.currentValue('dispMain')=="Smart") simpMain = "     Touch   "
-    else simpMain = "        "+ state.chMajor +'.'+ state.chMinor
-}
-
-def toggleMode(val) {
-    if (val > 50) chMode() else volMode()
-}
-
-
-////////////////////////////////
-
-def toggleShift(){
-	if (device.currentValue('shift') == "0") sendEvent(name:"shift", value:"5", linkText: "Shift: 5", descriptionText: "") else
-    if (device.currentValue('shift') == "5") sendEvent(name:"shift", value:"10", linkText: "Shift 10", descriptionText: "") else
-    sendEvent(name:"shift", value:"0", linkText: "Shift Off", descriptionText: "") 
-
-}
-
-///////////////////////////////////////////////
-*/
 def playPause() { if (device.currentValue('playing') == "play") pause()
 				  else if (device.currentValue('playing') == "pause") goPlay()
                  }
@@ -619,37 +278,6 @@ def getVolume() { updateDataValue("curMute", "");
                     }
 def getVolumeDup() {getVolume()}
 
-/*
-def getMode() { query("data?target=context_ui","getMode") }
-def getModeDup() {getMode()}
-def getChannel() { query("data?target=cur_channel","getChannel") }
-def getChannelDup() {getChannel()}
-
-def getDisplay() { 	updateDataValue("chMajor", ""); updateDataValue("chPhys", ""); updateDataValue("chType", ""); 
-					updateDataValue("chMinor", ""); updateDataValue("chName", ""); updateDataValue("chProg", "");
-					updateDataValue("curMode", "");                    
-                    getMode()
-                 }
-
-def getAppStates() {
-	log.debug "gettingAppStates"
-    updateDataValue("curApp","")
-   
-	["Netflix","Hulu","Amazon","YouTube","Home","Settings","AdvSettings","ChList","Input"].each { //,"Recent","Simp","Video","SetTop","Menu"].each { 
-        log.debug "Getting $it"
-        runIn(2, "get$it")
-    }
-    runIn(30, "getDone")
-}
-
-def getDone() {
-	log.debug "getting done & curApp = $state.curApp"
-	if (state.curApp == "") {
-		updateDataValue("curApp","none")
-    	if (state.curMode == "TouchPad") storeDisplay("smart")
-    }
-}
-*/
 
 def getAppId(appName) { query("apptoapp/data/$appName", "appname:$appName") }
                  
