@@ -3,67 +3,37 @@
 metadata {
 	definition (name: "Josh's LG Smart TV", namespace: "tv", author: "Josh") 
     {
-		capability "TV"
+		//capability "TV"
         capability "Switch Level"
         capability "Switch"
         capability "Music Player"
         capability "Refresh"
         
-        attribute "sessionId", "string"
-        attribute "muted", "string"
-        attribute "tvMode", "string"        
-        attribute "dispMain", "string"
-        attribute "dispDetails", "string"
-        attribute "working", "string"
-        attribute "changed", "string"
-        attribute "shift", "string"
-        attribute "playing", "string"
+        attribute "sessionId", "string"   
+       // attribute "working", "string"
         
         command "volUp", ["string"]
         command "volDown", ["string"]
-        command "toggleMode", ["number"]
         command "update" 
-        command "refresh"
-        command "chMode"
-        command "volMode"
-        command "mute"
         command "setMute", ["string"]
         command "getVolume"
-        command "getChannel"
-        command "getMode"
-        command "getDisplay"
         
         command "goHome"
         command "goBack"
         command "goExit"
         command "goOK"
         command "goSettings"
-        command "goPlay"
-        command "pause"
         command "playPause"
         command "goUp"
         command "goDown"
         command "goRight"
         command "goLeft"
-        command "channelDown"
-        command "channelUp"
         command "goInput"
         command "reqAuthCommand"
-        command "goInfo"
-        command "goTV"
-        command "goNetflix"
-        command "goHulu"        
-        command "goCast"
-        command "goChList"
-        command "goAdvSettings"
-        command "goRecent"
         command "goMenu"
-        command "goChList"
-        command "toggleShift"
-        
+        //command "goChList"    
         command "rwd"
         command "fwd"
-        command "resetPointer"
 	}
  
     
@@ -87,15 +57,12 @@ def updated() {
 
 def volUp(value) { volumeUp(value as Integer) }
 def volDown(value) { volumeDown(value as Integer) }
-
 def nextTrack() { volumeUp(1) }
 def previousTrack() { volumeDown(1) }
-def play() { mute() }
 
 def setLevel(value) {
-    value = value as Integer
-    log.trace "setlevel $value"
-    
+   value = value as Integer
+   log.trace "setlevel $value"
    def vol = state.curLevel as Integer
    if (value > vol) volumeUp(value-vol)//delayTvCommand(24, value-vol,"volumeChange")
    if (value < vol) volumeDown(vol-value)//delayTvCommand(25, vol-value,"volumeChange")
@@ -106,7 +73,7 @@ def setLevel(value) {
 def on() {
 	log.debug "Setting 'on'; preOffing = $state.preOffing"
 	sendEvent(name: 'switch', value:"on")
-    sendEvent(name:'working', value:"true", displayed: false)
+    //sendEvent(name:'working', value:"true", displayed: false) 
     updateDataValue("preOffing","false")
 	refresh()
 }
@@ -116,12 +83,9 @@ def preOff() {
     updateDataValue("preOffing","false")
 	sendEvent(name: "switch", value:"off", isStateChange: true)
     sendEvent(name: 'sessionId', value:"", displayed: false)
-	sendEvent(name:'working', value:"off", displayed: false)
-    
-	sendEvent(name:'dispMain', value:"", displayed: false)
-	sendEvent(name:'dispDetails', value:"", displayed: false) 
-	sendEvent(name:'muted', value:"", displayed: false)
-	sendEvent(name:'changed', value:"off", displayed: false)
+	//sendEvent(name:'working', value:"off", displayed: false)
+    updateDataValue("preoffing", "off")
+    sendEvent(name:'mute', value:"unmuted", displayed: false)
     unschedule()
 }
 
@@ -158,38 +122,21 @@ def parse(String description) {
 	        def data = body.data  
 			if (valid(data.text())) { data.children().each{ if (valid(it.text())) {
  		       	log.debug "| ${it.name()} = ${it.text()}"	
-            	if (it.name() == "physicalNum") updateDataValue("chPhys", it.text())
-            	if (it.name() == "chtype") updateDataValue("chType", it.text())
-           	 	if (it.name() == "major") updateDataValue("chMajor", it.text())
-            	if (it.name() == "minor") updateDataValue("chMinor", it.text())
-            	if (it.name() == "chname") updateDataValue("chName", it.text())
-            	if (it.name() == "progName") updateDataValue("chProg", it.text())           
-            	if (it.name() == "mode") updateDataValue("curMode", it.text())    
 				if (it.name() == "mute") updateDataValue("curMute", it.text())
-            	if (it.name() == "level") {
-                	updateDataValue("curLevel", it.text())
-                    setLevel(it.text())
-                }    
+            	if (it.name() == "level") {updateDataValue("curLevel", it.text())}    
         	}	}	}	
 		}
             
 		if (caller=="volumeChange") getVolume() 
-        if (caller=="channelChange") {
-            runIn(1,"getChannel")
-            runIn(3,"getChannelDup")
-        }    
-
                 
 		if (caller=="getVolume") { 
         	if (valid(state.curMute) && valid(state.curLevel)) {	
         		def muted       
             	log.debug "curLevel $state.curLevel | curMute $state.curMute"
-	        	if (state.curMute == "true") muted = "true"
-            		else muted = state.curLevel
-            	sendEvent(name:'muted', value:"$muted", displayed: false)     
-
-             	if (!device.currentValue("changed").contains("ch")) sendEvent(name: 'changed', value:"$muted", displayed: false)
+	        	if (state.curMute == "true") { sendEvent(name:'mute', value:"muted", displayed: false) }
+                else { sendEvent(name:'mute', value:"unmuted", displayed: false) }  
                 
+                setLevel(state.curLevel) 
 			}	//else getVolume()
        	}
         
@@ -205,128 +152,82 @@ def parse(String description) {
 		}
     }
 
-    def working = device.currentValue('working')  
-
-  //  if (working == "true") {
-    	if (status == 401) {
-    		log.debug "Unauthorized - clearing session value"
-           	refresh()
-        }
-  //  }
+    //def working = device.currentValue('working')  
+    if (status == 401) {
+    	log.debug "Unauthorized - clearing session value"
+    	refresh()
+    }
     
-    if (working != "off") {
-   		sendEvent(name:'working', value:"false", displayed: false)
+    if (state.preOffing != "off") {
+   		//sendEvent(name:'working', value:"false", displayed: false)
         if (device.currentValue("switch") == "off") {
        	  sendEvent(name: 'switch', value:"on")
           update()
         }
         unschedule("preOff")
+        updateDataValue("preOffing","false")
     }
         
 }
 
-def playPause() { if (device.currentValue('playing') == "play") pause()
-				  else if (device.currentValue('playing') == "pause") goPlay()
+def playPause() { if (device.currentValue('status') == "playing") pause()
+				  else if (device.currentValue('status') == "paused") play()
                  }
 
-def pause() {	log.debug "pause"; 
-				sendEvent(name:'playing', value:"pause", displayed: false)
-				if (device.currentValue('tvMode') == "smart" || device.currentValue('tvMode') == "cast") {
-					tvCommand(34); 	  		    	
-				}
+def pause() {	log.debug "going pause"; 
+                sendEvent(name:'status', value:"paused", displayed: false)
+				tvCommand(34); 	  		    	
             }
-def goPlay() {	log.debug "play";
-				sendEvent(name:'playing', value:"play", displayed: false)
-				if (device.currentValue('tvMode') == "smart" || device.currentValue('tvMode') == "cast") {
-					tvCommand(33) 	  		    	
-				}        
+def play() {	log.debug "going play";
+                sendEvent(name:'status', value:"playing", displayed: false)
+				tvCommand(33) 	  		   
         
         }
 def fwd() {log.debug "fwd"; tvCommand(36)}
 def rwd() {log.debug "rwd"; tvCommand(37)}
-
-def channelUp()	{ if (device.currentValue('shift') == "5") delayTvCommand(27, 5, "channelChange") else
-				  if (device.currentValue('shift') == "10") delayTvCommand(27, 10, "channelChange") else tvCommand(27,"channelChange")
-}
-
-def channelDown(){ if (device.currentValue('shift') == "5") delayTvCommand(28, 5, "channelChange") else
-				  if (device.currentValue('shift') == "10") delayTvCommand(28, 10, "channelChange") else tvCommand(28, "channelChange")
-}                  
 
 def volumeUp(value) {delayTvCommand(24, value,"volumeChange")}
 
 
 def volumeDown(value) {delayTvCommand(25, value,"volumeChange")}
 
+def mute(){   if (device.currentValue('mute')=="unmuted") toggleMute() }
+def unmute(){ if (device.currentValue('mute')=="muted") toggleMute() }
+
 
 def setMute(n)
 {  log.debug "muting $n"
- if ((n == '1') && (device.currentValue('muted') != 'true')) mute()
- if ((n == '0') && (device.currentValue('muted') == 'true')) mute()
+ if ((n == '1') && (device.currentValue('mute') == "unmuted")) toggleMute()
+ if ((n == '0') && (device.currentValue('mute') == "muted")) toggleMute()
 }
 
-def mute() {  
+def toggleMute() {  
     tvCommand(26,"volumeChange")
-    def muted; if (device.currentValue('muted') == "true") muted = "false" else muted = "true"
-    log.debug "Current muted: ${device.currentValue('muted')} ...and muted is $muted"
-    sendEvent(name:'changed', value:"volChange", displayed: false); sendEvent(name: 'muted', value:muted, displayed: false)
+    def muted = (device.currentValue('mute') == "unmuted")
+    log.debug "Current mute: ${device.currentValue('mute')} ...and mute is $muted"
+    if (muted) sendEvent(name: 'mute', value:"muted", displayed: false)
+    	  else sendEvent(name: 'mute', value:"unmuted", displayed: false)
 }  
 
-def getVolume() { updateDataValue("curMute", ""); 
+def getVolume() { updateDataValue("curMute", "");
 					updateDataValue("curLevel", "")
 					query("data?target=volume_info", "getVolume")  
-                    }
-def getVolumeDup() {getVolume()}
-
-
-def getAppId(appName) { query("apptoapp/data/$appName", "appname:$appName") }
-                 
-def getNetflix() { appStatus("144115188075855874", "Netflix") }
-def getHulu() { appStatus("144115188075855875", "Hulu") }
-def getAmazon() { appStatus("144115188075855876", "Amazon") }
-def getYouTube() { appStatus("144115188075855877", "YouTube") }
-
+                }
 def getHome() { appStatus("9", "Home") }
 def getSettings() { appStatus("102", "Settings") }
 def getAdvSettings() { appStatus("120", "Settings") }
 def getVideo() { appStatus("123", "Video") }
-def getChList() { appStatus("117", "ChList") }
-def getRecent() { appStatus("105", "Recent") }
-def getSimp() { appStatus("119", "Simp") }
-def getSetTop() { appStatus("160", "SetTop") }
 def getInput() { appStatus("101", "Input") }
 def getMenu() { appStatus("108", "Menu") }
 
-def goNetflix() { appCommand("144115188075855874", "Netflix") }
-def goHulu() { appCommand("144115188075855875", "Hulu") }
-
 def goBack() { tvCommand(23,"modeChange") }
-def goHome() { tvCommand(21,"modeChange") }
+def goHome() { 	tvCommand(21,"modeChange") }
 def goExit() { tvCommand(412,"modeChange") }
 def goOK() { tvCommand(20,"modeChange") }
 def goInput() { tvCommand(47,"modeChange") }
 def goMenu() { tvCommand(417,"modeChange") }
-def	goCast() { appCommand("160", "transfer")}
-def goRecent() { appCommand("105", "Recent")}
-def goSettings() {   if (device.currentValue('shift') == "0") appCommand("102", "Settings")
-				   	 if (device.currentValue('shift') == "5") tvCommand(417,"modeChange")//appCommand("108", "Settings")
-                 }
+def goSettings() { appCommand("102", "Settings") }
 
-def goAdvSettings() { appCommand("120", "AdvSettings")}
-def goTV() { appCommand("119", "goTVmenu")}
-def goChList() { appCommand("117", "ChList")}
-def goBrowser() { appCommand("12", "Browser")}
-def goInfo() {
-    def tvMode = device.currentValue('tvMode')
-    if (tvMode == "smart") {
-    	for (int i = 0; i < 20; i++) {
-			tvMove("-1","0")
-    		tvMove("1","0")
-        }    
-    	tvCommand(20)
-    }    
-    tvCommand(45)
-}
 
 def delay(duration, callback = {})
 {
@@ -363,25 +264,24 @@ def goLeft() { tvCommand(14) }
 
 def update()
 {
-    log.debug "executing Update()"
+    log.debug "executing Update"
     getVolume() 
 }
 
-def refresh() 
-{
-    log.debug "Executing 'refresh' and ${device.currentValue('switch')}"
+def refresh() {
+    log.debug "Executing refresh"// and ${device.currentValue('switch')}"
 	sessionIdCommand()
     if (device.currentValue('switch') == "on") 
     {
     	log.trace "preoffing = ${state.preOffing}"
     	if (state.preOffing == 'false') {
-        	updateDataValue("preOffing","true")
+        	updateDataValue("preOffing","true") 
             runIn(90, "preOff")
         	log.debug "scheduling 'preOff()'"
 		}
 		update()
     }
-    if (device.currentValue('switch') == "off") sendEvent(name:'working', value:"false", displayed: false)
+    if (device.currentValue('switch') == "off") updateDataValue("preOffing","false")//sendEvent(name:'working', value:"false", displayed: false)
 }
 
 
@@ -391,7 +291,7 @@ def cursorVisible(value) {	goEvent("cursorVisible","<value>$value</value>")}
 
 def reqAuthCommand() {	goAuth("AuthKeyReq","") }
 def sessionIdCommand() {	log.debug "sessionIdCommand"
-							goAuth("AuthReq","<value>$pairingKey</value>")  
+							goAuth("AuthReq","<value>$pairingKey</value>","Pairing Key")  
                             
                        }
 def appCommand(auid,requestId="") {	goCommand("AppExecute","<auid>${Long.toHexString(auid.toLong())}</auid>","launch:$requestId") }
@@ -399,7 +299,8 @@ def appClose(auid,requestId="") {	goCommand("AppTerminate","<auid>${Long.toHexSt
 def appStatus(auid, requestId="") { query("apptoapp/data/$auid/status", "status:$requestId") }
 def appTerm(auid, requestId="") { sendHttp("POST", "/roap/api/apptoapp/command/$auid/term", "", requestId)}
 
-def tvCommand(cmd,requestId="") { goCommand("HandleKeyInput","<value>${cmd}</value>",requestId) }
+def tvCommand(cmd,requestId="") { goCommand("HandleKeyInput","<value>${cmd}</value>",requestId) 
+log.debug "sending..."}
     
 def goCommand(commandName, values,requestId="") { goService(commandName, "command","udap",values,requestId) }
 def goEvent(commandName, values,requestId="") { goService(commandName, "event","udap",values,requestId) }
@@ -437,7 +338,7 @@ def sendHttp(String method, path, body, requestId = "") {
 	] 
     def hubAction = new physicalgraph.device.HubAction(httpRequest)
     if (valid(requestId)) hubAction.requestId=requestId
-   // log.debug "$hubAction"
+    log.debug "$hubAction"
 	sendHubCommand(hubAction)
 }
 
