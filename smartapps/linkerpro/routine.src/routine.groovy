@@ -96,7 +96,7 @@ def configureFormat() {
                  "dimRange","dimAbove","dimBelow","n",
                  "onColor","nn",
                  "movement","contact","presence","vibration","meter","temp","nn",
-                 "modeChange","nn","buttonPush","buttonValue","n",
+                 "modeChange","nn","buttonPush","buttonValue","n"
                  ].each{
                 	def inp = settings[it]
                 	if (inp) working = working +"\n$it: $inp"
@@ -216,9 +216,11 @@ private hideSection(lead) {
       						break
       case "sensors": 	res=movement || contact || meter || 
       						presence || vibration ||
-      						meter || temp 
+      						meter || temp
                         	break  
                             //
+      case "special":  res=baseDevice
+      					break
       case "events": 	res=modeChange || timer   						 
 							break  
       case "slave": 	res=slave || colorSlave 
@@ -270,7 +272,6 @@ def configurePage() {
             inpt([],"physical", "capability.switch","","Switch"); inpt(["physical"],"hardOn", "bool", "(hard push?)")
     		inptSimp("dimRange", "capability.switch", "Dimmer"); inpt(["dimRange"],"dimAbove","number", "","Above");  inpt(["dimRange"],"dimBelow","number", "","Below") 
             inptSimp("onColor", "capability.colorControl", "Color Change")
-            inptSimp("specialSwitch", "capability.switch", "Special switch"); inpt(["specialSwitch"],"specialAttribute", "text", "", "Attribute"); inpt(["specialSwitch"],"specialValue", "text", "", "Value")            
             inptSimp("buttonPush", "capability.button", "Button(s)"); inpt(["buttonPush"],"buttonValue","text","","Button number");	inpt(["buttonPush"],"buttonHeld","bool", "Held?") 
         }     
 		if (!hideSection("sensor") || !quickEdit) section(title: "Sensor", hideable:true, hidden: hideSection("sensors")) {
@@ -280,6 +281,20 @@ def configurePage() {
     		inptSimp("vibration", "capability.accelerationSensor", "Vibration sensor")     
 	   		inptSimp("meter", "capability.powerMeter", "Power"); inpt(["meter"],"meterValue","number","","Threshold")
     		inptSimp("temp","capability.temperatureMeasurement","Temperature Sensor"); inpt(["temp"],"tempValue", "number", "", "Target")
+		}
+        if (!hideSection("special") || !quickEdit) section(title: "Special", hideable:true, hidden: hideSection("special")) {
+       		input("baseDevice", "enum" ,title: type, multiple: false, required: false, options: [["capability.actuator":"Actuator"],["capability.switch":"Switch"],["capability.sensor":"Sensor"]], submitOnChange: true)
+			inpt(["baseDevice"],"specialSwitch", baseDevice, "Special switch",""); 
+            
+            def atts = []
+            if (specialSwitch) specialSwitch.each {it.getSupportedAttributes().each { 
+            	if (!atts.contains(it.name))
+            	if (!["checkInterval", "DeviceWatch-DeviceStatus", "healthStatus", "DeviceWatch-Enroll"].contains(it.name)) atts+=it.name
+            }	}
+            inptEnum(["specialSwitch"], "specialAttribute",atts, "", "Attribute")
+            //inpt(["specialSwitch"],"specialAttribute", "text", "", "Attribute")
+            inpt(["specialSwitch"],"specialValue", "text", "", "Value")  
+            inpt(["specialSwitch"],"specialNot", "bool", "Not")  
         }
 		if (!hideSection("events") || !quickEdit) section(title: "Events", hideable:true, hidden: hideSection("events")) {       
             inptSimp("modeChange", "mode", "Mode change")
@@ -299,7 +314,7 @@ def inptAlt(ArrayList parent=[], Boolean inverted, String name, String type, Str
 def inpt(ArrayList parent=[], String name, String type, String title = "", String desc = "", Boolean multiple=true) {
 	
 	def parentPassed = true
-    //log.trace "name $name title $title desc $desc parent $parent"
+    log.trace "name $name title $title desc $desc parent $parent"
     parent.each { if (!settings["$it"]) parentPassed = false }
     if (type == "bool" || type == "text" || type == "number" || type == "time" || type == "mode" || type == "capability.button") multiple = false
 	if ((settings["$name"] || !quickEdit) && (!parent || parentPassed))
@@ -308,10 +323,11 @@ def inpt(ArrayList parent=[], String name, String type, String title = "", Strin
 
 def inptEnum(ArrayList parent=[], String name, ArrayList opts, String title = "", String desc = "", Boolean required=false) {
     def parentPassed = true
-    //log.trace "name $name title $title desc $desc parent $parent"
+    log.trace "name $name title $title desc $desc parent $parent"
     parent.each { if (!settings["$it"]) parentPassed = false }
 	if ((settings["$name"] || !quickEdit) && (!parent || parentPassed))
 	input name, "enum", title: title, description: desc, options: opts, required: required, multiple: false, submitOnChange: true
+    else log.trace "$parentPassed"
 }
 
 
@@ -321,6 +337,8 @@ def effectPage() {
     	 if (!hideSection("slave") || !quickEdit) section("Sync") {
         	 inpt([], "slave", "capability.switch", "Sync")
              inpt(["slave"], "syncDim", "bool", "Dim?");  inpt(["slave", "syncDim"], "dimOnly", "bool", "(dim only?)") 
+             
+             inpt(["syncDim"], "syncDimMult", "text", "Multiplier");
              inpt(["slave"], "syncCol", "bool", "Color?");  inpt(["slave", "syncCol"], "colOnly", "bool", "(color only?)") 
              inpt(["slave"], "offCallback", "bool", "Callback (on off())?");  inpt(["slave","offCallback"], "offCallbackAny", "bool", "...even just one?")     		
 			 inpt([],"colorSlave", "capability.colorControl", "Colors?")            
@@ -332,53 +350,67 @@ def effectPage() {
     		inpt([], "mimicOn", "capability.switch", "On --> Mimic");	inpt(["mimicOn"], "masterOn", "capability.switch",  "", "Master switch:")
             
    			inpt([], "dimOn", "capability.switchLevel", "Set dimmer");  inpt(["dimOn"], "dimOnlyOn", "bool", "(dim only?)")
-			 inpt(["dimOn"], "dimValueOn", "text",  "", "Dim value:");  inpt(["dimOn"], "dimMasterOn", "capability.switchLevel",  "", "Dim master:")    
+		     inpt(["dimOn"], "dimValueOn", "text", "Dim value:");  inpt(["dimOn"], "dimMasterOn", "capability.switchLevel",  "", "Dim master:")    
+             inpt(["dimMasterOn"], "dimMasterMultOn", "text", "Multiplier");
             
 			inpt([], "colorOn", "capability.colorControl", "Set color:");	inpt(["colorOn"], "colorOnlyOn", "bool", "(color only?)")  
              inpt(["colorOnlyOn"], "colorIgnoreOn", "bool", "(ignore off?)")  
-			 inpt(["colorOn"], "colorValueOn", "text",  "", "color value:");	inpt(["colorOn"], "colorMasterOn", "capability.colorControl", "Color master:")        
+			 inpt(["colorOn"], "colorValueOn", "text",  "Color value:");	inpt(["colorOn"], "colorMasterOn", "capability.colorControl", "Color master:")        
     		
-    		inpt([], "statusOn", "capability.switch", "Set status");	inpt(["statusOn"], "statusValueOn", "text",  "", "status value:")           
-            inpt([], "setModeOn", "mode",  "", "Change mode to:")
+    		inpt([], "statusOn", "capability.switch", "Set status");	inpt(["statusOn"], "statusValueOn", "text", "Status value:")           
+            inpt([], "setModeOn", "mode",  "Change mode to:")
 			//def phrases = location.helloHome?.getPhrases()*.label
-			inptEnum([], "phraseOn", location.helloHome?.getPhrases()*.label, "", "Activate routine:")
+			inptEnum([], "phraseOn", location.helloHome?.getPhrases()*.label, "Activate routine:")
     		
             inpt([], "msgOn", "text", "Message", "Internal");	inpt(["msgOn"], "msgPushOn", "bool", "Alert?");	inpt(["msgOn"], "msgFeedOn", "bool", "Feed?")      
-			inpt([], "messageOn", "text", "", "SMS");	inpt(["messageOn"], "phoneOn","phone" ,"") 
+			inpt([], "messageOn", "text", "SMS");	inpt(["messageOn"], "phoneOn","phone" ,"") 
             
             inpt([], "cameraOn", "capability.imageCapture", "Camera", "Take!")
                         
          	inpt([], "customOptionsOn", "bool", "Custom?");   def typeOn = "capability.actuator"
              inptEnum(["customOptionsOn"],"customTypeOn", [["capability.actuator":"Actuator"],["capability.switch":"Switch"],["capability.sensor":"Sensor"]], "Device", "Type");  if (customTypeOn) typeOn = customTypeOn		           
-             inpt(["customOptionsOn"], "customOn", "$typeOn", "", "Device");	inpt(["customOptionsOn", "customOn"], "customCmdOn", "text", "Command", "none")	
-             
+             inpt(["customOptionsOn"], "customOn", "$typeOn", "Device");	
+             //inpt(["customOptionsOn", "customOn"], "customCmdOn", "text", "Command", "none")	             
+            def cmds = []
+            if (customOn) customOn.each { it.supportedCommands.each {if (!cmds.contains(it.name)) cmds+=it.name}	}
+            if (!customOptionsOnText) inptEnum(["customOptionsOn", "customOn"], "customCmdOn",cmds, "Command") 
+            inpt(["customOptionsOn", "customOn"], "customOptionsOnText", "bool", "Manual input?");
+            inpt(["customOptionsOn", "customOn", "customOptionsOnText"], "customCmdOn", "text", "Command", "none")	
 		}
         log.trace "${!hideSection("off")} || ${!quickEdit}"
         if (!hideSection("off") || !quickEdit) section("Off", hideable:true, hidden: hideSection("off")) {    
-			inpt([], "virtualOff", "capability.switch", "", "Off --> Off()")
-   			inpt([], "flipOff", "capability.switch", "", "Off --> On()")
-    		inpt([], "mimicOff", "capability.switch", "Off --> Mimic");	inpt(["mimicOff"], "masterOff", "capability.switch",  "", "Master switch:")
+			inpt([], "virtualOff", "capability.switch", "Off --> Off()")
+   			inpt([], "flipOff", "capability.switch", "Off --> On()")
+    		inpt([], "mimicOff", "capability.switch", "Off --> Mimic");	inpt(["mimicOff"], "masterOff", "capability.switch", "Master switch:")
             
    			inpt([], "dimOff", "capability.switchLevel", "Set dimmer");  inpt(["dimOff"], "dimOnlyOff", "bool", "(dim only?)")
-			 inpt(["dimOff"], "dimValueOff", "text",  "", "Dim value:");  inpt(["dimOff"], "dimMasterOff", "capability.switchLevel",  "", "Dim master:")    
+			 inpt(["dimOff"], "dimValueOff", "text",  "Dim value:");  inpt(["dimOff"], "dimMasterOff", "capability.switchLevel", "Dim master:")    
+            inpt(["dimMasterOff"], "dimMasterMultOff", "text", "Multiplier");
+            
             
 			inpt([], "colorOff", "capability.colorControl", "Set color:");	inpt(["colorOff"], "colorOnlyOff", "bool", "(color only?)")  
              inpt(["colorOnlyOff"], "colorIgnoreOff", "bool", "(ignore off?)")  
-			 inpt(["colorOff"], "colorValueOff", "text",  "", "color value:");	inpt(["colorOff"], "colorMasterOff", "capability.colorControl", "Color master:")        
+			 inpt(["colorOff"], "colorValueOff", "text",  "color value:");	inpt(["colorOff"], "colorMasterOff", "capability.colorControl", "Color master:")        
     		
-    		inpt([], "statusOff", "capability.switch", "Set status");	inpt(["statusOff"], "statusValueOff", "text",  "", "status value:")           
-            inpt([], "setModeOff", "mode",  "", "Change mode to:")
+    		inpt([], "statusOff", "capability.switch", "Set status");	inpt(["statusOff"], "statusValueOff", "text", "Status value:")           
+            inpt([], "setModeOff", "mode", "Change mode to:")
 			//def phrases = location.helloHome?.getPhrases()*.label
-			inptEnum([], "phraseOff", location.helloHome?.getPhrases()*.label, "", "Activate routine:")
+			inptEnum([], "phraseOff", location.helloHome?.getPhrases()*.label, "Activate routine:")
     		
             inpt([], "msgOff", "text", "Message", "Internal");	inpt(["msgOff"], "msgPushOff", "bool", "Alert?");	inpt(["msgOff"], "msgFeedOff", "bool", "Feed?")      
-			inpt([], "messageOff", "text", "", "SMS");	inpt(["messageOff"], "phoneOff","phone" ,"") 
+			inpt([], "messageOff", "text", "SMS");	inpt(["messageOff"], "phoneOff","phone" ,"") 
             
             inpt([], "cameraOff", "capability.imageCapture", "Camera", "Take!")
                         
          	inpt([], "customOptionsOff", "bool", "Custom?");   def typeOff = "capability.actuator"
              inptEnum(["customOptionsOff"],"customTypeOff", [["capability.actuator":"Actuator"],["capability.switch":"Switch"],["capability.sensor":"Sensor"]], "Device", "Type");  if (customTypeOff) typeOff = customTypeOff		           
-             inpt(["customOptionsOff"], "customOff", "$typeOff", "", "Device");	inpt(["customOptionsOff", "customOff"], "customCmdOff", "text", "Command", "none")	
+             inpt(["customOptionsOff"], "customOff", "$typeOff", "Device");	
+             	
+            def cmds = []
+            if (customOff) customOff.each { it.supportedCommands.each {if (!cmds.contains(it.name)) cmds+=it.name}}
+            if (!customOptionsOffText) inptEnum(["customOptionsOff", "customOff"], "customCmdOff",cmds, "Command")
+            inpt(["customOptionsOff", "customOff"], "customOptionsOffText", "bool", "Manual input?");
+            inpt(["customOptionsOff", "customOff","customOptionsOffText"], "customCmdOff", "text", "Command", "none")
 		}
         
         if (!hideSection("delay") || !quickEdit) section("Delay",hideable:true, hidden: hideSection("delay")) {
@@ -519,6 +551,7 @@ def killHandler(evt) {
 }
 
 def handler(evt) {
+	log.trace evt.value
 	run([value:evt.value, name:evt.name, type:evt.type, displayName:evt.displayName,stringValue:evt.stringValue])
 }
 
@@ -549,11 +582,14 @@ def runStuff(evt) {
     	// 			SYNC BLOCK		//       
     if (cat == "level" && syncDim) {
         def dims = slave
+        def dimVals = evt.value as Integer
+        def dimMasterMult = (settings["syncDimMult"] ?: 1) as Double 
+        dimVals = Math.min((dimMasterMult * dimVals), 99) as Integer
         log.debug "making it dim to ${dims}"
       	if (dimOnly) {
             dims?.each() {if (it.currentValue('switch')?.contains('on')) 
-            {it.setLevel(evt.value)}}
-        } else dims?.setLevel(evt.value) 
+            {it.setLevel(dimVals)}}
+        } else dims?.setLevel(dimVals) 
       	log.debug "${dims*.currentValue('switch')}"
     }  
     
@@ -597,12 +633,17 @@ def runStuff(evt) {
     
     def special = settings["specialAttribute"] ?: "status"    
     if (cat == "switch") {cat = (!hardOn || typ == "physical") ? "OnOff" : "ignore"}
-    if (cat == special) val = (specialValue == val) ? "On" : "ignore"
+    if (cat == special) {
+    	if (!specialNot) val = (specialValue == val) ? "On" : "ignore"
+        else val = (specialValue == val) ? "Ignore" : "On"
+    }
     if (cat == "mode") val = (val==modeChange) ? "On" : "Off"  
     if (cat == "button") {
-		val = getButtonVal(evt.value, evt.data)
-        log.debug "button hit: $val"                      
-    	val = (buttonValue == val && (!buttonHeld ^ evt.value.contains("held")))  ? "On" : "Off"  
+		//val = getButtonVal(evt.value, evt.data)
+        //log.debug "button hit: $val"                      
+    	//val = (buttonValue == val && (!buttonHeld ^ evt.value.contains("held")))  ? "On" : "Off"  
+        log.debug "button = $evt"
+        val = (!buttonHeld ^ evt.value.contains("held"))  ? "On" : "Off"  
     }      
     if (cat == "level" && dimRange) {
     	def valInt = val as Integer
@@ -626,7 +667,7 @@ def runStuff(evt) {
         //val = (tempValue > valInt)  ? "Off" : "On"  
         val = (!tempValue) ? "On" : (tempValue > valInt)  ? "Off" : "On"
     }    
-    cat = (["motion","contact","presence","acceleration","power",special,"mode", "temperature"].contains(cat)) ? "OnOff" : cat 
+    cat = (["motion","contact","presence","acceleration","power",special,"mode", "temperature","button"].contains(cat)) ? "OnOff" : cat 
     val = cleanEvt(val)
     
 
@@ -649,20 +690,22 @@ def runStuff(evt) {
         
         if (dims) {
        		def dimVals = settings["dimValue$val"]
-            
-        	if (!dimVals) dimVals = settings["dimMaster$val"]?.currentValue('level')[0] 
+            def dimMaster = settings["dimMaster$val"]
+            def dimMasterMult = (settings["dimMasterMult$val"] ?: 1) as Double
+            log.debug "mult $dimMasterMult"
             log.debug "dimVals = ${dimVals}"
             
             dims?.each() {
             	if ((it.currentValue('switch')?.contains('on')) || (!settings["dimOnly$val"])) {
-                	if ((dimVals.toString().contains("+")) || (dimVals.toString().contains("-"))) {
-                    	def curDim = it.currentValue('level') as Integer
-                		def newDim = dimVals as Integer
-                        if ((curDim + newDim) < 0) newDim = 0
-                        log.debug "dimVals $dimVals = newDim $newDim + curDim $curDim and ${dimVals.contains("-")} or ${dimVals.contains("+")}"
-						dimVals = curDim + newDim
-                        //log.trace "setlevel $dimVals"
-                    }   
+                	def curDim = (dimMaster) ? dimMaster?.currentValue('level')[0] : it.currentValue('level') as Integer
+                    log.trace "curDim $curDim | *= ${dimMasterMult * curDim}"        
+                    curDim = Math.min((dimMasterMult * curDim), 99) as Integer
+                   
+                    if ((dimVals.toString().contains("+")) || (dimVals.toString().contains("-"))) {
+                    	def newDim = dimVals as Integer
+                        dimVals = Math.max((curDim + newDim),0)                    
+                    } else if (dimMaster) dimVals = curDim
+                    log.trace "dimVals $dimVals"
                     it.setLevel(dimVals)                    
                 }
 			}  

@@ -218,9 +218,9 @@ def televisionDiscovery()
         	input "pollingBackup", "decimal", title: "Backup Interval", required: false   
 		}
 
-        section("External Controllers:") {
-        	input "muteButton", "capability.switch", multiple: false, title: "Mute Controller:", required: false 
-        }
+     //   section("External Controllers:") {
+     //   	input "muteButton", "capability.switch", multiple: false, title: "Mute Controller:", required: false 
+     //   }
     
     	section("Please wait while we discover your LG TV. Discovery can take five minutes or more, so sit back and relax! Select your device below once discovered."){
             input "selectedTv", "enum", required:false, title:"Select LG TV (${numFound} found)", multiple:false, options:options
@@ -300,8 +300,8 @@ def initialize()
     def tv = getChildDevice(tvId())
     
     subscribe(app, appTouch)
-    subscribe(muteButton, "switch", switchChange)
-    subscribe(tv, "muted", muteChange)
+   // subscribe(muteButton, "switch", switchChange)
+   // subscribe(tv, "muted", muteChange)
     doPoll()
     backupCheck()
     
@@ -320,16 +320,17 @@ def OAuthToken(){
 }
 
 def switchChange(evt) {
-log.debug "switchChange $evt"
+log.debug "switchChange $evt.value"
 	if (evt.value == "off") 
     getChildDevice(tvId())?.setLevel(10) else 
-	getChildDevice(tvId())?.setLevel(11)                 
+	getChildDevice(tvId())?.setLevel(11)        
+    log.trace "${tvId()}"
 }
 
 def muteChange(evt) {
 	log.debug "muteChange $evt"
-	if (evt.value == "true") muteButton.on() else
-    muteButton.off()
+	//if (evt.value == "true") muteButton.on() else
+    //muteButton.off()
 }
 
 def getDevices() {
@@ -340,7 +341,7 @@ def getDevices() {
 
 def addDevice()
 { 
-//  def deviceSettings = selectedTv.split("!")
+  def deviceSettings = selectedTv.split("!")
 //  def ipAddressHex = deviceSettings[1
 //  def ipAddress = convertHexToIP(ipAddressHex)
     
