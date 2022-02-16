@@ -1,30 +1,14 @@
-/**
- *  WeMo Direct LED Bulbs
- *
- *  Copyright 2014 SmartThings
- *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
- *  in compliance with the License. You may obtain a copy of the License at:
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
- *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
- *  for the specific language governing permissions and limitations under the License.
- *
- *  Thanks to Chad Monroe @cmonroe and Patrick Stuart @pstuart
- *
- */
+
 metadata {
 	definition (name: "Custom WeMo Bulb", namespace: "smartthings", author: "SmartThings") {
 	
     	capability "Actuator"
         capability "Configuration"
         capability "Refresh"
-		
+		capability "Light"
         capability "Switch"
 		capability "Switch Level"
-        capability "Light"
+        capability "Audio Volume"
         attribute "onSpeed", "number"
         attribute "offSpeed", "number"
         attribute "oldLevel", "number"
@@ -111,10 +95,14 @@ def parse(String description) {
     }	
 }
 
-def setOnSpeed(value) { 	sendEvent(name: "onSpeed", value: value) 
-log.trace "set $value"
-}
+def setOnSpeed(value) { 	sendEvent(name: "onSpeed", value: value) }
 def setOffSpeed(value) { 	sendEvent(name: "offSpeed", value: value) }
+
+def setVolume(value) { 	sendEvent(name: "volume", value: value, isStateChange: true) 
+						setOnSpeed(value) }
+
+def volumeUp(value) {}
+def volumeDown(value) {}
 
 
 def on() {
@@ -142,7 +130,7 @@ def off() {
 }
 
 def refresh() {
-
+setVolume(device.currentValue("volume") ?: 0 )
 log.trace "${device.currentValue("onSpeed")} onSpeedDef = $onSpeedDef"
 setOnSpeed(device.currentValue("onSpeed") ?: onSpeedDef)
 setOffSpeed(device.currentValue("offSpeed") ?: offSpeedDef)
