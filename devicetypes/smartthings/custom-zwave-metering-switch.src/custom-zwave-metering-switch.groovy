@@ -88,9 +88,9 @@ def zwaveEvent(physicalgraph.zwave.commands.manufacturerspecificv2.ManufacturerS
 		state.aeonconfig = 1
 		result << response(delayBetween([
 			zwave.configurationV1.configurationSet(parameterNumber: 101, size: 4, scaledConfigurationValue: 4).format(),   // report power in watts
-			zwave.configurationV1.configurationSet(parameterNumber: 111, size: 4, scaledConfigurationValue: 15).format(), // every 5 min
+			zwave.configurationV1.configurationSet(parameterNumber: 111, size: 4, scaledConfigurationValue: 300).format(), // every 5 min
 			zwave.configurationV1.configurationSet(parameterNumber: 102, size: 4, scaledConfigurationValue: 8).format(),   // report energy in kWh
-			zwave.configurationV1.configurationSet(parameterNumber: 112, size: 4, scaledConfigurationValue: 15).format(), // every 5 min\
+			zwave.configurationV1.configurationSet(parameterNumber: 112, size: 4, scaledConfigurationValue: 300).format(), // every 5 min\
 			zwave.meterV2.meterGet(scale: 0).format(),
 			zwave.meterV2.meterGet(scale: 2).format(),
 		]))
