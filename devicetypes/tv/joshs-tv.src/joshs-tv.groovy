@@ -14,11 +14,9 @@ metadata {
         attribute "sessionId", "string"   
        // attribute "working", "string"
         
-        command "volUp", ["string"]
-        command "volDown", ["string"]
+        command "volumeUp", ["string"]
+        command "volumeDown", ["string"]
         command "update" 
-       
-        command "getVolume"
         
         command "goHome"
         command "goBack"
@@ -32,8 +30,7 @@ metadata {
         command "goLeft"
         command "goInput"
         command "reqAuthCommand"
-        command "goMenu"
-        //command "goChList"    
+        command "goMenu"  
         command "rwd"
         command "fwd"
 	}
@@ -69,19 +66,19 @@ def updated() {
     refresh()
 }
 
-def volUp(value) { volumeUp(value as Integer) }
-def volDown(value) { volumeDown(value as Integer) }
 def nextTrack() { volumeUp(1) }
 def previousTrack() { volumeDown(1) }
 
 def setLevel(value) {
-  // if (value = 0) 
-   value = value as Integer
    log.trace "setlevel $value"
-   def vol = state.curLevel as Integer
-   if (value > vol) volumeUp(value-vol)//delayTvCommand(24, value-vol,"volumeChange")
-   if (value < vol) volumeDown(vol-value)//delayTvCommand(25, vol-value,"volumeChange")
-   sendEvent(name: "level", value: value, isStateChange: true, displayed: false)
+   value = value as Integer
+   if (value == 0) mute() else if (value == 100) unmute()
+   else {
+ 		def vol = state.curLevel as Integer
+		if (value > vol) volumeUp(value-vol)
+		if (value < vol) volumeDown(vol-value)
+		sendEvent(name: "level", value: value, isStateChange: true, displayed: false)
+   }
 }
 
 
@@ -145,15 +142,15 @@ def parse(String description) {
 		if (caller=="volumeChange") runIn(5,getVolume)
                 
 		if (caller=="getVolume") { 
-        	if (valid(state.curMute) && valid(state.curLevel)) {	
-        		def muted       
+        	if (valid(state.curMute) && valid(state.curLevel)) {	   
             	log.debug "curLevel $state.curLevel | curMute $state.curMute"
-	        	if (state.curMute == "true") setMute(true) // { sendEvent(name:'mute', value:"muted", displayed: false) }
-                else {
-            
-                  setMute(false) // { sendEvent(name:'mute', value:"unmuted", displayed: false) }  
+	        	//if (state.curMute == "true") setMute(true)
+                //else {            
+                  //setMute(false) // { sendEvent(name:'mute', value:"unmuted", displayed: false) }  
+                  //setMute((state.curMute == "true") ? "muted":"unmuted")
+                  sendEvent(name: 'mute', value:"${(state.curMute == "true") ? "muted":"unmuted"}", displayed: false)
                   setLevel(state.curLevel)
-                }
+                //}
 			}	
        	}  
         
@@ -205,46 +202,51 @@ def fwd() {log.debug "fwd"; tvCommand(36)}
 def rwd() {log.debug "rwd"; tvCommand(37)}
 
 def volumeUp(value) { log.trace "volume up by $value"
-    delayTvCommand(24, value,"volumeChange")
+    delayTvCommand(24, value as Integer,"volumeChange")
+    unmute()
     //sendEvent(name: "door", value: "open")
 }
 def volumeDown(value) {log.trace "volume down by $value"
-    delayTvCommand(25, value,"volumeChange")
+    delayTvCommand(25, value as Integer,"volumeChange")
+    unmute()
    // sendEvent(name: "door", value: "closed")  
 }
 
-def mute(){  tvCommand(26,"volumeCh")}// if (device.currentValue('mute')=="unmuted") toggleMute() }
-def unmute(){ tvCommand(26,"volumeCh")}//if (device.currentValue('mute')=="muted") toggleMute() }
+def mute(){ setMute("muted") }// if (device.currentValue('mute')=="unmuted") toggleMute() }
+def unmute(){ setMute("unmuted") }//if (device.currentValue('mute')=="muted") toggleMute() }
 
 
-def setMute(bool)
-{ if (bool) {
+def setMute(muted) { 
+	log.debug "setMute $muted"
+    if (device.currentValue('mute') != muted) tvCommand(26,"volumeChange")
+    sendEvent(name: 'mute', value:muted, displayed: false)
+
+/* (bool) {
     	sendEvent(name: 'mute', value:"muted", displayed: false)
         sendEvent(name: "lock", value: "locked")
     } else {
     	sendEvent(name: 'mute', value:"unmuted", displayed: false)
         sendEvent(name: "lock", value: "unlocked")
-	}
+	} */
 }
 
-def toggleMute() {    
+/*def toggleMute() {    
     def muted = (device.currentValue('mute') == "unmuted")
     log.debug "Current mute: ${device.currentValue('mute')} ...and mute is $muted"
     setMute(muted)
     tvCommand(26,"volumeChange")
 }  
+*/
 
 def lock() {
 log.debug "locked"
- //tvCommand(26,"volumeCh")
 	sendEvent(name: "lock", value: "locked")
-	mute()    
+//	mute()    
 }
 def unlock() {
 log.debug "unlocked"
-// tvCommand(26,"volumeCh")
 	sendEvent(name: "lock", value: "unlocked")
-    unmute()    
+//    unmute()    
 }
 
 def getVolume() { updateDataValue("curMute", "");
@@ -267,22 +269,15 @@ def goMenu() { tvCommand(417,"modeChange") }
 def goSettings() { appCommand("102", "Settings") }
 
 
-def delay(duration, callback = {})
+def delay(duration)
 {
 	def dTotalSleep = 0
 	def dStart = new Date().getTime()
-    def cmds = []
-	cmds << "delay 2"
     
     while (dTotalSleep <= duration)
     {            
-		cmds
         dTotalSleep = (new Date().getTime() - dStart)
     }
-
-    log.debug "Slept ${dTotalSleep}ms"
-
-	callback(dTotalSleep)
 }
 
 def delayTvCommand(key, loop, requestId="") {
@@ -290,8 +285,7 @@ def delayTvCommand(key, loop, requestId="") {
 	for (int c = 0; c < loop; c++) { 
         if (c == loop-1)	tvCommand(key,requestId) 
         else {
-        	tvCommand(key,"loop") 
-        	log.trace "delay lopp $c"
+        	tvCommand(key,"loop $c") 
         	delay(250)
        }     
      }
